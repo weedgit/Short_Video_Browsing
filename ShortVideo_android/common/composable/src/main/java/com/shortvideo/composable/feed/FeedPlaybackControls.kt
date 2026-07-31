@@ -12,15 +12,12 @@ import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.shortvideo.composable.util.formatDuration
 
 @Composable
 fun FeedPlaybackControls(
@@ -39,12 +36,24 @@ fun FeedPlaybackControls(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .background(Color.Black.copy(alpha = 0.35f))
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 0.dp, vertical = 0.dp),
     ) {
+        LinearProgressIndicator(
+            progress = { progress },
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(2.dp)
+                .clip(RoundedCornerShape(0.dp)),
+            color = Color.White.copy(alpha = 0.85f),
+            trackColor = Color.White.copy(alpha = 0.2f),
+        )
+
         IconButton(
             onClick = onToggleMute,
-            modifier = Modifier.align(Alignment.CenterEnd),
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 4.dp, bottom = 8.dp),
         ) {
             Icon(
                 imageVector = if (isMuted) {
@@ -53,29 +62,8 @@ fun FeedPlaybackControls(
                     Icons.AutoMirrored.Filled.VolumeUp
                 },
                 contentDescription = if (isMuted) "Unmute" else "Mute",
-                tint = Color.White,
+                tint = Color.White.copy(alpha = 0.9f),
             )
         }
-
-        LinearProgressIndicator(
-            progress = { progress },
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .padding(end = 48.dp)
-                .fillMaxWidth()
-                .height(3.dp)
-                .clip(RoundedCornerShape(999.dp)),
-            color = Color.White,
-            trackColor = Color.White.copy(alpha = 0.25f),
-        )
-
-        Text(
-            text = "${formatDuration(currentPositionMs)} / ${formatDuration(durationMs)}",
-            style = MaterialTheme.typography.labelSmall,
-            color = Color.White.copy(alpha = 0.85f),
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(end = 48.dp, top = 8.dp),
-        )
     }
 }
