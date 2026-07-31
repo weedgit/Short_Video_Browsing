@@ -213,6 +213,16 @@ object MockFeedDataSource {
             category = sample.category,
             uploadedAtLabel = sample.uploadedAtLabel,
             durationMs = sample.durationMs,
+            playbackFormat = "mp4",
+            thumbnailUrl = "https://picsum.photos/seed/sv$index/720/1280",
+            authorId = "author-$index",
+            authorAvatarUrl = "https://i.pravatar.cc/150?u=sv$index",
+            likeCount = (100L + index * 137) % 50_000,
+            commentCount = (10L + index * 17) % 2_000,
+            shareCount = (5L + index * 9) % 900,
+            isLiked = index % 5 == 0,
+            isFollowing = index % 7 == 0,
+            musicLabel = "Original sound - ${sample.authorName}",
         )
     }
 }

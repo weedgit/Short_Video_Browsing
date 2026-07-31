@@ -13,12 +13,22 @@ export type FeedVideoItem = {
   streamUrl: string;
   playbackFormat: "hls" | "mp4";
   streamUrlExpiresAt: string;
+  thumbnailUrl: string | null;
+  authorId: string;
   authorName: string;
+  authorAvatarUrl: string | null;
   description: string;
   hashtags: string[];
   category: string | null;
   uploadedAtLabel: string;
   durationMs: number;
+  likeCount: number;
+  commentCount: number;
+  shareCount: number;
+  isLiked: boolean;
+  isFollowing: boolean;
+  isSaved: boolean;
+  musicLabel: string | null;
 };
 
 export type FeedPage = {

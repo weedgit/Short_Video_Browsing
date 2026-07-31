@@ -46,7 +46,17 @@ private fun NavGraphBuilder.registerFeatureGraphs(
         navController = navController,
         onLoggedOut = onLoggedOut,
     )
-    homeNavGraph()
+    homeNavGraph(
+        onSearchClick = {
+            navController.navigate(com.shortvideo.core.DestinationRoute.DISCOVER_ROUTE) {
+                launchSingleTop = true
+                restoreState = true
+                popUpTo(com.shortvideo.core.DestinationRoute.HOME_ROUTE) {
+                    saveState = true
+                }
+            }
+        },
+    )
     discoverNavGraph()
     uploadNavGraph()
     inboxNavGraph()

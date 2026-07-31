@@ -10,8 +10,15 @@ import {
   findVideoIdsByIds,
   ensureDevFeedSeed,
 } from "../db/repositories/video.repository";
-import { resolveSignedPlaybackUrl } from "../integrations/cloudflare";
+import {
+  findFollowingUserIds,
+  findFollowingUserIdsSubset,
+  findLikedVideoIds,
+  findSavedVideoIds,
+} from "../db/repositories/social.repository";
+import { resolveSignedPlaybackUrl, resolveThumbnailUrl } from "../integrations/cloudflare";
 import { decodeFeedCursor, encodeFeedCursor, formatUploadedAtLabel } from "../utils/feedCursor";
+import { getCachedForYouFirstPage, setCachedForYouFirstPage } from "../utils/feedCache";
 import type { FeedQueryInput, PlaybackBatchInput } from "../validators/feed.schema";
 
 async function ensureDevSeedData(): Promise<void> {
@@ -24,7 +31,27 @@ export async function getFeedPage(
 ): Promise<FeedPage> {
   await ensureDevSeedData();
 
-  const readyCount = await countReadyVideos();
+  const isCacheableFirstPage = query.tab === "foryou" && !query.cursor;
+  const cacheKey = isCacheableFirstPage ? audience.userId ?? audience.deviceId ?? null : null;
+
+  if (cacheKey) {
+    const cached = await getCachedForYouFirstPage(cacheKey);
+    if (cached) return cached;
+  }
+
+  let followingUserIds: string[] | undefined;
+  if (query.tab === "following") {
+    if (!audience.userId) {
+      return { items: [], nextCursor: null, hasMore: false };
+    }
+
+    followingUserIds = await findFollowingUserIds(audience.userId);
+    if (followingUserIds.length === 0) {
+      return { items: [], nextCursor: null, hasMore: false };
+    }
+  }
+
+  const readyCount = await countReadyVideos(followingUserIds);
   if (readyCount === 0) {
     return { items: [], nextCursor: null, hasMore: false };
   }
@@ -42,6 +69,7 @@ export async function getFeedPage(
     limit: fetchLimit,
     cursor,
     excludeVideoIds,
+    followingUserIds,
   });
 
   if (videos.length === 0 && excludeVideoIds.length > 0) {
@@ -50,6 +78,7 @@ export async function getFeedPage(
       limit: fetchLimit,
       cursor,
       excludeVideoIds: [],
+      followingUserIds,
     });
   }
 
@@ -64,6 +93,18 @@ export async function getFeedPage(
     });
   }
 
+  const viewerId = audience.userId;
+  const videoIds = pageVideos.map((video) => video.id);
+  const authorIds = [...new Set(pageVideos.map((video) => video.userId))];
+
+  const [likedSet, savedSet, followingSet] = viewerId
+    ? await Promise.all([
+        findLikedVideoIds(viewerId, videoIds),
+        findSavedVideoIds(viewerId, videoIds),
+        findFollowingUserIdsSubset(viewerId, authorIds),
+      ])
+    : [new Set<string>(), new Set<string>(), new Set<string>()];
+
   const items = pageVideos.map((video) => {
     const signed = resolveSignedPlaybackUrl({
       cloudflareAssetId: video.cloudflareAssetId,
@@ -76,12 +117,22 @@ export async function getFeedPage(
       streamUrl: signed.url,
       playbackFormat: signed.format,
       streamUrlExpiresAt: signed.expiresAt.toISOString(),
+      thumbnailUrl: resolveThumbnailUrl(video),
+      authorId: video.userId,
       authorName: video.user.displayName,
+      authorAvatarUrl: video.user.avatarUrl,
       description: video.description,
       hashtags: video.hashtags.map((tag) => tag.tag),
       category: video.category,
       uploadedAtLabel: formatUploadedAtLabel(video.createdAt),
       durationMs: video.durationMs,
+      likeCount: video.likeCount,
+      commentCount: video.commentCount,
+      shareCount: video.shareCount,
+      isLiked: likedSet.has(video.id),
+      isFollowing: followingSet.has(video.userId),
+      isSaved: savedSet.has(video.id),
+      musicLabel: video.musicLabel,
     };
   });
 
@@ -94,11 +145,17 @@ export async function getFeedPage(
         })
       : null;
 
-  return {
+  const page: FeedPage = {
     items,
     nextCursor,
     hasMore,
   };
+
+  if (cacheKey) {
+    await setCachedForYouFirstPage(cacheKey, page);
+  }
+
+  return page;
 }
 
 export async function ingestPlaybackEvents(

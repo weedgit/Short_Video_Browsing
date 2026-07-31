@@ -2,14 +2,29 @@ package com.shortvideo.data.repository
 
 import com.shortvideo.data.mapper.toDomain
 import com.shortvideo.data.mapper.toMockPage
+import com.shortvideo.data.remote.DiscoverApi
 import com.shortvideo.data.remote.FeedApi
+import com.shortvideo.data.remote.InboxApi
+import com.shortvideo.data.remote.ProfileApi
+import com.shortvideo.data.remote.SocialApi
+import com.shortvideo.data.remote.dto.CreateCommentRequestDto
 import com.shortvideo.data.remote.dto.PlaybackBatchRequestDto
 import com.shortvideo.data.remote.dto.PlaybackEventRequestDto
+import com.shortvideo.data.remote.dto.RegisterDeviceRequestDto
 import com.shortvideo.data.source.MockFeedDataSource
 import com.shortvideo.domain.model.FeedPage
+import com.shortvideo.domain.model.InboxNotification
 import com.shortvideo.domain.model.PlaybackEvent
+import com.shortvideo.domain.model.ProfileVideoItem
+import com.shortvideo.domain.model.UserProfile
+import com.shortvideo.domain.model.VideoComment
+import com.shortvideo.domain.repository.DiscoverRepository
+import com.shortvideo.domain.repository.DiscoverResult
 import com.shortvideo.domain.repository.FeedRepository
+import com.shortvideo.domain.repository.InboxRepository
 import com.shortvideo.domain.repository.PlaybackEventRepository
+import com.shortvideo.domain.repository.ProfileRepository
+import com.shortvideo.domain.repository.SocialRepository
 import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -20,16 +35,18 @@ import kotlinx.coroutines.sync.withLock
 class FeedRepositoryImpl @Inject constructor(
     private val feedApi: FeedApi,
 ) : FeedRepository {
-    override suspend fun loadFeedPage(cursor: String?, limit: Int): FeedPage {
+    override suspend fun loadFeedPage(cursor: String?, limit: Int, tab: String): FeedPage {
         return try {
-            val page = feedApi.getFeed(cursor = cursor, limit = limit).data?.toDomain()
+            val page = feedApi.getFeed(cursor = cursor, limit = limit, tab = tab).data?.toDomain()
             when {
                 page == null -> MockFeedDataSource.getVideos().toMockPage()
-                cursor == null && page.videos.isEmpty() -> MockFeedDataSource.getVideos().toMockPage()
+                cursor == null && page.videos.isEmpty() && tab == "foryou" ->
+                    MockFeedDataSource.getVideos().toMockPage()
                 else -> page
             }
         } catch (_: Exception) {
-            MockFeedDataSource.getVideos().toMockPage()
+            if (tab == "foryou") MockFeedDataSource.getVideos().toMockPage()
+            else FeedPage(emptyList(), null, false)
         }
     }
 }
@@ -77,6 +94,109 @@ class PlaybackEventRepositoryImpl @Inject constructor(
             )
         } catch (_: Exception) {
             pendingEvents.addAll(0, batch.take(50))
+        }
+    }
+}
+
+@Singleton
+class SocialRepositoryImpl @Inject constructor(
+    private val socialApi: SocialApi,
+) : SocialRepository {
+    override suspend fun likeVideo(videoId: String): Pair<Boolean, Long> {
+        val data = socialApi.likeVideo(videoId).data ?: return true to 0L
+        return data.liked to data.likeCount
+    }
+
+    override suspend fun unlikeVideo(videoId: String): Pair<Boolean, Long> {
+        val data = socialApi.unlikeVideo(videoId).data ?: return false to 0L
+        return data.liked to data.likeCount
+    }
+
+    override suspend fun getComments(videoId: String): List<VideoComment> =
+        socialApi.getComments(videoId).data?.items?.map { it.toDomain() }.orEmpty()
+
+    override suspend fun postComment(videoId: String, text: String): VideoComment =
+        socialApi.postComment(videoId, CreateCommentRequestDto(text)).data!!.toDomain()
+
+    override suspend fun followUser(userId: String): Boolean =
+        socialApi.followUser(userId).data?.following ?: true
+
+    override suspend fun unfollowUser(userId: String): Boolean =
+        socialApi.unfollowUser(userId).data?.following ?: false
+
+    override suspend fun saveVideo(videoId: String): Boolean =
+        socialApi.saveVideo(videoId).data?.get("saved") ?: true
+
+    override suspend fun unsaveVideo(videoId: String): Boolean =
+        socialApi.unsaveVideo(videoId).data?.get("saved") ?: false
+}
+
+@Singleton
+class ProfileRepositoryImpl @Inject constructor(
+    private val profileApi: ProfileApi,
+) : ProfileRepository {
+    override suspend fun getMyProfile(): UserProfile =
+        profileApi.getMyProfile().data!!.toDomain()
+
+    override suspend fun getProfile(userId: String): UserProfile =
+        profileApi.getProfile(userId).data!!.toDomain()
+
+    override suspend fun getProfileVideos(userId: String): List<ProfileVideoItem> =
+        profileApi.getProfileVideos(userId).data?.items?.map { it.toDomain() }.orEmpty()
+}
+
+@Singleton
+class DiscoverRepositoryImpl @Inject constructor(
+    private val discoverApi: DiscoverApi,
+) : DiscoverRepository {
+    override suspend fun search(query: String?): DiscoverResult {
+        return try {
+            val data = discoverApi.discover(query).data
+            DiscoverResult(
+                hashtags = data?.hashtags?.map { it.toDomain() }.orEmpty(),
+                users = data?.users?.map { it.toDomain() }.orEmpty(),
+                videos = data?.videos?.map { it.toDomain() }.orEmpty(),
+            )
+        } catch (_: Exception) {
+            DiscoverResult(
+                hashtags = listOf(
+                    com.shortvideo.domain.model.DiscoverHashtag("#shortvideo", 120),
+                    com.shortvideo.domain.model.DiscoverHashtag("#foryou", 98),
+                    com.shortvideo.domain.model.DiscoverHashtag("#dance", 76),
+                ),
+                users = emptyList(),
+                videos = MockFeedDataSource.getVideos().take(6),
+            )
+        }
+    }
+}
+
+@Singleton
+class InboxRepositoryImpl @Inject constructor(
+    private val inboxApi: InboxApi,
+) : InboxRepository {
+    override suspend fun getNotifications(): Pair<List<InboxNotification>, Int> {
+        return try {
+            val data = inboxApi.getInbox().data
+            (data?.items?.map { it.toDomain() }.orEmpty()) to (data?.unreadCount ?: 0)
+        } catch (_: Exception) {
+            emptyList<InboxNotification>() to 0
+        }
+    }
+
+    override suspend fun markRead(id: String) {
+        runCatching { inboxApi.markRead(id) }
+    }
+
+    override suspend fun markAllRead() {
+        runCatching { inboxApi.markAllRead() }
+    }
+
+    override suspend fun registerFcmToken(deviceId: String, fcmToken: String) {
+        runCatching {
+            inboxApi.registerFcm(
+                RegisterDeviceRequestDto(deviceId = deviceId, fcmToken = fcmToken),
+            )
         }
     }
 }

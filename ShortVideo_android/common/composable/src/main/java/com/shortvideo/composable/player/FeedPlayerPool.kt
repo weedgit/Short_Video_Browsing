@@ -23,8 +23,11 @@ class FeedPlayerPool(
     }
 
     fun acquire(forPreload: Boolean): ExoPlayer {
-        val player = available.removeFirstOrNull()
-            ?: FeedExoPlayerFactory.createActivePlayer(context.applicationContext)
+        val player = if (available.isEmpty()) {
+            FeedExoPlayerFactory.createActivePlayer(context.applicationContext)
+        } else {
+            available.removeFirst()
+        }
         inUse.add(player)
         FeedExoPlayerFactory.applyLoadControlHint(player, forPreload)
         return player

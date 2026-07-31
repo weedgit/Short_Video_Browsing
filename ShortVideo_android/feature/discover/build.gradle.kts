@@ -34,8 +34,10 @@ kapt {
 
 dependencies {
     implementation(project(":core"))
+    implementation(project(":domain"))
     implementation(project(":common:theme"))
     implementation(project(":common:composable"))
     baseDependencies()
     composeDependencies()
+    coilDependencies()
 }

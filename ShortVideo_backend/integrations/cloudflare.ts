@@ -77,6 +77,20 @@ export function buildAssetPlaybackUrls(assetId: string): { hlsUrl: string; strea
   };
 }
 
+export function buildAssetThumbnailUrl(assetId: string): string {
+  const subdomain = config.cloudflare.streamCustomerSubdomain ?? "videodelivery.net";
+  return `https://${subdomain}/${assetId}/thumbnails/thumbnail.jpg`;
+}
+
+export function resolveThumbnailUrl(source: {
+  thumbnailUrl?: string | null;
+  cloudflareAssetId?: string | null;
+}): string | null {
+  if (source.thumbnailUrl) return source.thumbnailUrl;
+  if (source.cloudflareAssetId) return buildAssetThumbnailUrl(source.cloudflareAssetId);
+  return null;
+}
+
 export function resolveSignedPlaybackUrl(source: PlaybackSource): SignedPlaybackUrl {
   const expiresAt = new Date(Date.now() + config.feedSignedUrlTtlSeconds * 1000);
 

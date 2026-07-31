@@ -11,6 +11,14 @@ class ShortVideoApp : Application(), Configuration.Provider {
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
 
+    @Inject
+    lateinit var fcmTokenRegistrar: com.shortvideo.app.push.FcmTokenRegistrar
+
+    override fun onCreate() {
+        super.onCreate()
+        fcmTokenRegistrar.registerIfNeeded()
+    }
+
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)

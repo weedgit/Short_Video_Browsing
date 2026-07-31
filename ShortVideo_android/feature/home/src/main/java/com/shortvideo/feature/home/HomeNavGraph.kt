@@ -13,14 +13,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import com.shortvideo.composable.feed.VerticalVideoFeed
 import com.shortvideo.core.DestinationRoute
 
+@UnstableApi
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
+    onSearchClick: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -52,14 +55,28 @@ fun HomeScreen(
                     onNearEnd = viewModel::onNearEnd,
                     onActiveVideoChanged = viewModel::onActiveVideoChanged,
                     onVideoStarted = viewModel::onVideoStarted,
+                    selectedTab = uiState.selectedTab,
+                    onTabSelected = viewModel::onTabSelected,
+                    onSearchClick = onSearchClick,
+                    commentsForActive = uiState.comments,
+                    onLikeClick = viewModel::onLikeClick,
+                    onFollowClick = viewModel::onFollowClick,
+                    onSaveClick = viewModel::onSaveClick,
+                    onShareClick = viewModel::onShareClick,
+                    onLoadComments = viewModel::onLoadComments,
+                    onSubmitComment = viewModel::onSubmitComment,
+                    onFirstFrame = viewModel::onFirstFrame,
                 )
             }
         }
     }
 }
 
-fun NavGraphBuilder.homeNavGraph() {
+@UnstableApi
+fun NavGraphBuilder.homeNavGraph(
+    onSearchClick: () -> Unit = {},
+) {
     composable(DestinationRoute.HOME_ROUTE) {
-        HomeScreen()
+        HomeScreen(onSearchClick = onSearchClick)
     }
 }

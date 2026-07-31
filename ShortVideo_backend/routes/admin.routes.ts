@@ -1,0 +1,28 @@
+import { Router } from "express";
+import {
+  getAdminAnalyticsHandler,
+  getAdminAnnouncementsHandler,
+  getAdminReportsHandler,
+  getAdminUsersHandler,
+  getAdminVideosHandler,
+  patchAdminReportHandler,
+  patchAdminUserHandler,
+  patchAdminVideoHandler,
+  postAdminAnnouncementHandler,
+} from "../controllers/admin.controller";
+
+export function createAdminRouter(): Router {
+  const router = Router();
+
+  router.get("/users", getAdminUsersHandler);
+  router.patch("/users/:userId", patchAdminUserHandler);
+  router.get("/videos", getAdminVideosHandler);
+  router.patch("/videos/:videoId", patchAdminVideoHandler);
+  router.get("/reports", getAdminReportsHandler);
+  router.patch("/reports/:id", patchAdminReportHandler);
+  router.get("/announcements", getAdminAnnouncementsHandler);
+  router.post("/announcements", postAdminAnnouncementHandler);
+  router.get("/analytics", getAdminAnalyticsHandler);
+
+  return router;
+}

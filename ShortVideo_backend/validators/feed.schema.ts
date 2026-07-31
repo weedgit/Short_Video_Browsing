@@ -3,6 +3,7 @@ import { z } from "zod";
 export const feedQuerySchema = z.object({
   cursor: z.string().trim().optional(),
   limit: z.coerce.number().int().min(1).max(20).default(10),
+  tab: z.enum(["foryou", "following"]).default("foryou"),
 });
 
 export const playbackEventSchema = z.object({
@@ -15,6 +16,7 @@ export const playbackEventSchema = z.object({
     "COMPLETE",
     "BUFFER",
     "IMPRESSION",
+    "TTFF",
   ]),
   positionMs: z.number().int().min(0).default(0),
   occurredAt: z.string().datetime().optional(),

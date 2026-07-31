@@ -40,7 +40,7 @@ fun FeedTopTabs(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            FeedTab.values().forEach { tab ->
+            FeedTab.entries.forEach { tab ->
                 val selected = tab == selectedTab
                 TextButton(onClick = { onTabSelected(tab) }) {
                     Text(

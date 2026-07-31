@@ -13,6 +13,7 @@ export async function findFeedVideos(params: {
   limit: number;
   cursor?: { createdAt: Date; id: string };
   excludeVideoIds: string[];
+  followingUserIds?: string[];
 }): Promise<VideoWithRelations[]> {
   const prisma = getPrismaClient();
 
@@ -23,6 +24,7 @@ export async function findFeedVideos(params: {
       id: {
         notIn: params.excludeVideoIds.length > 0 ? params.excludeVideoIds : undefined,
       },
+      ...(params.followingUserIds ? { userId: { in: params.followingUserIds } } : {}),
       ...(params.cursor
         ? {
             OR: [
@@ -44,12 +46,13 @@ export async function findFeedVideos(params: {
   });
 }
 
-export async function countReadyVideos(): Promise<number> {
+export async function countReadyVideos(followingUserIds?: string[]): Promise<number> {
   const prisma = getPrismaClient();
   return prisma.video.count({
     where: {
       status: "READY",
       deletedAt: null,
+      ...(followingUserIds ? { userId: { in: followingUserIds } } : {}),
     },
   });
 }

@@ -5,7 +5,11 @@ import com.shortvideo.data.network.AuthInterceptor
 import com.shortvideo.data.network.DeviceHeadersInterceptor
 import com.shortvideo.data.network.TokenAuthenticator
 import com.shortvideo.data.remote.AuthApi
+import com.shortvideo.data.remote.DiscoverApi
 import com.shortvideo.data.remote.FeedApi
+import com.shortvideo.data.remote.InboxApi
+import com.shortvideo.data.remote.ProfileApi
+import com.shortvideo.data.remote.SocialApi
 import com.shortvideo.data.remote.UploadApi
 import dagger.Module
 import dagger.Provides
@@ -87,6 +91,34 @@ object NetworkModule {
         okHttpClient: OkHttpClient,
         @Named("apiBaseUrl") apiBaseUrl: String,
     ): UploadApi = createRetrofitApi(okHttpClient, apiBaseUrl, UploadApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideSocialApi(
+        okHttpClient: OkHttpClient,
+        @Named("apiBaseUrl") apiBaseUrl: String,
+    ): SocialApi = createRetrofitApi(okHttpClient, apiBaseUrl, SocialApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideProfileApi(
+        okHttpClient: OkHttpClient,
+        @Named("apiBaseUrl") apiBaseUrl: String,
+    ): ProfileApi = createRetrofitApi(okHttpClient, apiBaseUrl, ProfileApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideDiscoverApi(
+        okHttpClient: OkHttpClient,
+        @Named("apiBaseUrl") apiBaseUrl: String,
+    ): DiscoverApi = createRetrofitApi(okHttpClient, apiBaseUrl, DiscoverApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideInboxApi(
+        okHttpClient: OkHttpClient,
+        @Named("apiBaseUrl") apiBaseUrl: String,
+    ): InboxApi = createRetrofitApi(okHttpClient, apiBaseUrl, InboxApi::class.java)
 
     private fun <T> createRetrofitApi(
         okHttpClient: OkHttpClient,

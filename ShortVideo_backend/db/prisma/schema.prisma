@@ -41,6 +41,15 @@ model User {
   feedImpressions     FeedImpression[]
   playbackEvents      PlaybackEvent[]
   uploadSessions      UploadSession[]
+  videoLikes          VideoLike[]
+  videoComments       VideoComment[]
+  videoSaves          VideoSave[]
+  reports             Report[]
+  announcements       Announcement[]
+  notifications       Notification[]      @relation("UserNotifications")
+  actedNotifications  Notification[]      @relation("UserNotificationActor")
+  followers           Follow[]            @relation("Following")
+  following           Follow[]            @relation("Follower")
 
   @@map("users")
 }
@@ -71,6 +80,11 @@ model Video {
   streamUrl         String?     @map("stream_url")
   hlsUrl            String?     @map("hls_url")
   category          String?
+  thumbnailUrl      String?     @map("thumbnail_url")
+  likeCount         Int         @default(0) @map("like_count")
+  commentCount      Int         @default(0) @map("comment_count")
+  shareCount        Int         @default(0) @map("share_count")
+  musicLabel        String?     @map("music_label")
   createdAt         DateTime    @default(now()) @map("created_at")
   updatedAt         DateTime    @updatedAt @map("updated_at")
   deletedAt         DateTime?   @map("deleted_at")
@@ -80,6 +94,10 @@ model Video {
   feedImpressions  FeedImpression[]
   playbackEvents   PlaybackEvent[]
   uploadSession    UploadSession?
+  likes            VideoLike[]
+  comments         VideoComment[]
+  saves            VideoSave[]
+  notifications    Notification[]
 
   @@index([status, createdAt, id])
   @@index([userId])
@@ -174,6 +192,7 @@ model UserDevice {
   deviceId   String   @map("device_id")
   platform   String   @default("android")
   appVersion String?  @map("app_version")
+  fcmToken   String?  @map("fcm_token")
   lastSeenAt DateTime @default(now()) @map("last_seen_at")
   createdAt  DateTime @default(now()) @map("created_at")
 
@@ -211,4 +230,125 @@ model PasswordResetToken {
 
   @@index([userId])
   @@map("password_reset_tokens")
+}
+
+model VideoLike {
+  id        String   @id @default(cuid())
+  videoId   String   @map("video_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([videoId, userId])
+  @@index([userId])
+  @@map("video_likes")
+}
+
+model VideoComment {
+  id        String   @id @default(cuid())
+  videoId   String   @map("video_id")
+  userId    String   @map("user_id")
+  text      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([videoId, createdAt])
+  @@index([userId])
+  @@map("video_comments")
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String   @map("follower_id")
+  followingId String   @map("following_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  follower  User @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
+  @@map("follows")
+}
+
+model VideoSave {
+  id        String   @id @default(cuid())
+  videoId   String   @map("video_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([videoId, userId])
+  @@index([userId])
+  @@map("video_saves")
+}
+
+enum ReportTargetType {
+  VIDEO
+  USER
+  COMMENT
+}
+
+enum ReportStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+model Report {
+  id         String           @id @default(cuid())
+  reporterId String           @map("reporter_id")
+  targetType ReportTargetType @map("target_type")
+  targetId   String           @map("target_id")
+  reason     String
+  status     ReportStatus     @default(OPEN)
+  createdAt  DateTime         @default(now()) @map("created_at")
+  resolvedAt DateTime?        @map("resolved_at")
+
+  reporter User @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([targetType, targetId])
+  @@map("reports")
+}
+
+model Announcement {
+  id          String    @id @default(cuid())
+  title       String
+  body        String
+  createdById String?   @map("created_by_id")
+  publishedAt DateTime? @map("published_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  isActive    Boolean   @default(true) @map("is_active")
+
+  createdBy User? @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([isActive, createdAt])
+  @@map("announcements")
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  type        String
+  title       String
+  body        String
+  isRead      Boolean  @default(false) @map("is_read")
+  videoId     String?  @map("video_id")
+  actorUserId String?  @map("actor_user_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user      User   @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  video     Video? @relation(fields: [videoId], references: [id], onDelete: SetNull)
+  actorUser User?  @relation("UserNotificationActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([userId, isRead])
+  @@map("notifications")
 }

@@ -86,6 +86,9 @@ fun RootScreen(
     val useDarkTheme = currentDestination?.route in setOf(
         DestinationRoute.HOME_ROUTE,
         DestinationRoute.UPLOAD_ROUTE,
+        DestinationRoute.DISCOVER_ROUTE,
+        DestinationRoute.INBOX_ROUTE,
+        DestinationRoute.PROFILE_ROUTE,
         null,
     )
 
