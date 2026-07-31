@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ShortVideo</string>
+    <string name="accessibility_service_label">ShortVideo Assist</string>
+    <string name="accessibility_service_description">Helps with in-app navigation and assistive playback controls. Only processes on-screen labels and tap events inside ShortVideo. Data is not stored or sent to servers.</string>
+</resources>

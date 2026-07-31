@@ -1,0 +1,51 @@
+{
+  "name": "shortvideo-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Short video app API server (Express + TypeScript)",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit",
+    "db:generate": "prisma generate --schema=db/prisma/schema.prisma",
+    "db:migrate": "prisma migrate dev --schema=db/prisma/schema.prisma",
+    "db:push": "prisma db push --schema=db/prisma/schema.prisma"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.5.0",
+    "bcryptjs": "^3.0.3",
+    "bullmq": "^5.40.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.3",
+    "pino": "^9.6.0",
+    "pino-http": "^10.4.0",
+    "rate-limit-redis": "^4.2.0",
+    "redis": "^4.7.0",
+    "swagger-ui-express": "^5.0.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^22.13.10",
+    "@types/supertest": "^6.0.2",
+    "@types/swagger-ui-express": "^4.1.8",
+    "prisma": "^6.5.0",
+    "supertest": "^7.0.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.9"
+  }
+}
