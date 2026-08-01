@@ -22,7 +22,12 @@ export async function createApp(): Promise<Express> {
       genReqId: (req) => req.requestId ?? "unknown",
     }),
   );
-  app.use(helmet());
+  app.use(
+    helmet({
+      // Admin UI runs on another origin/port (e.g. localhost:5173).
+      crossOriginResourcePolicy: { policy: "cross-origin" },
+    }),
+  );
   app.use(
     cors({
       origin: config.corsOrigin === "*" ? true : config.corsOrigin,
