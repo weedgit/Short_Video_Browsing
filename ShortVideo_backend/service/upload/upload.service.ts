@@ -32,7 +32,9 @@ export async function createUpload(
 
   const uploadToken = generateUploadToken();
   const uploadTokenHash = hashUploadToken(uploadToken);
-  const maxDurationSeconds = Math.ceil((input.durationMs ?? 60_000) / 1000);
+  const effectiveDurationMs =
+    input.durationMs != null && input.durationMs > 0 ? input.durationMs : 60_000;
+  const maxDurationSeconds = Math.ceil(effectiveDurationMs / 1000);
 
   const directUpload = await createDirectUpload({
     maxDurationSeconds,

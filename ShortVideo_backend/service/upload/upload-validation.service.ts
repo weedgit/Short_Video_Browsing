@@ -2,11 +2,9 @@ import { AppError } from "../../middleware/errorHandler";
 import { config } from "../../config";
 import type { CreateUploadInput } from "../../validators/upload.schema";
 
-const allowedMimeTypes = new Set(["video/mp4", "video/quicktime", "video/webm"]);
-
 export function validateUploadRequest(input: CreateUploadInput): void {
-  if (!allowedMimeTypes.has(input.mimeType)) {
-    throw new AppError(400, "UNSUPPORTED_MIME_TYPE", "Unsupported video format.");
+  if (!input.mimeType.toLowerCase().startsWith("video/")) {
+    throw new AppError(400, "UNSUPPORTED_MIME_TYPE", "Only video files are supported.");
   }
 
   if (input.fileSizeBytes > config.upload.maxFileSizeBytes) {

@@ -1,11 +1,16 @@
 import { z } from "zod";
 
-const allowedMimeTypes = ["video/mp4", "video/quicktime", "video/webm"] as const;
-
+/** Any video/* MIME — container may still be rejected by Cloudflare Stream if unsupported. */
 export const createUploadSchema = z.object({
-  mimeType: z.enum(allowedMimeTypes),
+  mimeType: z
+    .string()
+    .trim()
+    .min(1)
+    .refine((value) => value.toLowerCase().startsWith("video/"), {
+      message: "Only video MIME types are allowed.",
+    }),
   fileSizeBytes: z.coerce.number().int().positive(),
-  durationMs: z.coerce.number().int().positive().max(600_000).optional(),
+  durationMs: z.coerce.number().int().nonnegative().max(600_000).optional(),
 });
 
 export const publishVideoSchema = z.object({

@@ -177,12 +177,7 @@ private fun UploadSourceStep(
             onClick = {
                 permissionLauncher.launch(permissions.toTypedArray())
                 documentLauncher.launch(
-                    arrayOf(
-                        "video/*",
-                        "video/mp4",
-                        "video/quicktime",
-                        "video/webm",
-                    ),
+                    arrayOf("video/*"),
                 )
             },
             modifier = Modifier.fillMaxWidth(),

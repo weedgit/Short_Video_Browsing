@@ -11,7 +11,10 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
-private val ALLOWED_MIME_TYPES = setOf("video/mp4", "video/quicktime", "video/webm")
+/**
+ * Accepts any `video/*` MIME (and common extensions such as AVI/MKV).
+ * Size and duration limits still apply when duration can be read.
+ */
 private const val MAX_FILE_SIZE_BYTES = 1_073_741_824L
 private const val MAX_DURATION_MS = 600_000L
 private const val STREAM_BUFFER_SIZE = 8192
@@ -25,10 +28,14 @@ class VideoFileInspector @Inject constructor(
         val resolver = context.contentResolver
         val displayName = queryDisplayName(resolver, uri)
         val mimeType = resolveMimeType(resolver, uri, displayName)
-            ?: return Result.failure(IllegalArgumentException("Unsupported file type."))
+            ?: return Result.failure(
+                IllegalArgumentException("Unsupported file type. Please upload a video file."),
+            )
 
-        if (mimeType !in ALLOWED_MIME_TYPES) {
-            return Result.failure(IllegalArgumentException("Only MP4, MOV, and WebM videos are supported."))
+        if (!isVideoMimeType(mimeType)) {
+            return Result.failure(
+                IllegalArgumentException("Only video files are supported (e.g. MP4, MOV, AVI, WebM, MKV)."),
+            )
         }
 
         val fileSizeBytes = resolveFileSizeBytes(resolver, uri)
@@ -40,19 +47,17 @@ class VideoFileInspector @Inject constructor(
         }
 
         val durationMs = readDurationMs(uri)
-        if (durationMs <= 0) {
-            return Result.failure(IllegalArgumentException("Unable to read video duration."))
-        }
         if (durationMs > MAX_DURATION_MS) {
             return Result.failure(IllegalArgumentException("Video exceeds the 10 minute limit."))
         }
 
+        // Duration may be 0 for some containers (e.g. uncommon codecs); API treats it as optional.
         return Result.success(
             VideoFileInfo(
                 uri = uriString,
                 mimeType = mimeType,
                 fileSizeBytes = fileSizeBytes,
-                durationMs = durationMs,
+                durationMs = durationMs.coerceAtLeast(0L),
             ),
         )
     }
@@ -96,7 +101,7 @@ class VideoFileInspector @Inject constructor(
     }
 
     private fun normalizeMimeType(mimeType: String?, displayName: String?): String? {
-        if (mimeType != null && mimeType in ALLOWED_MIME_TYPES) {
+        if (mimeType != null && isVideoMimeType(mimeType)) {
             return mimeType
         }
 
@@ -105,13 +110,28 @@ class VideoFileInspector @Inject constructor(
             ?.lowercase()
             ?.takeIf { it.isNotBlank() }
 
-        return when (extension) {
-            "mp4", "m4v" -> "video/mp4"
-            "mov" -> "video/quicktime"
-            "webm" -> "video/webm"
-            else -> mimeType?.takeIf { it in ALLOWED_MIME_TYPES }
-        }
+        return mimeFromExtension(extension) ?: mimeType?.takeIf { isVideoMimeType(it) }
     }
+
+    private fun mimeFromExtension(extension: String?): String? = when (extension) {
+        "mp4", "m4v" -> "video/mp4"
+        "mov", "qt" -> "video/quicktime"
+        "webm" -> "video/webm"
+        "avi" -> "video/x-msvideo"
+        "mkv" -> "video/x-matroska"
+        "mpeg", "mpg", "mpe" -> "video/mpeg"
+        "3gp", "3gpp" -> "video/3gpp"
+        "3g2" -> "video/3gpp2"
+        "flv" -> "video/x-flv"
+        "wmv" -> "video/x-ms-wmv"
+        "ts", "m2ts", "mts" -> "video/mp2t"
+        "ogv" -> "video/ogg"
+        "asf" -> "video/x-ms-asf"
+        else -> null
+    }
+
+    private fun isVideoMimeType(mimeType: String): Boolean =
+        mimeType.startsWith("video/", ignoreCase = true)
 
     private fun isGenericBinaryType(mimeType: String): Boolean =
         mimeType == "application/octet-stream" || mimeType == "binary/octet-stream"
