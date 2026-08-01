@@ -189,10 +189,9 @@ Use this as a manual QA list. Check boxes as you go.
 
 ### 4.6 Profile
 
-- [ ] Own profile: avatar, name, bio, counts
+- [ ] Own profile: avatar, name, bio (under name), counts — no edit/avatar change on Profile
 - [ ] Settings: change avatar from gallery; new photo shows after upload
-- [ ] Settings: change display name / bio and Save profile
-- [ ] Profile Edit profile shortcut still works (optional)
+- [ ] Settings: change display name / bio and Save profile; bio appears on Profile
 - [ ] 3-column video grid
 - [ ] Settings: logout / delete account / password reset entry
 - [ ] Other user profile + follow (if navigated)
