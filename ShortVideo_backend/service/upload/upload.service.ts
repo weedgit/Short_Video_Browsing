@@ -39,6 +39,7 @@ export async function createUpload(
   const directUpload = await createDirectUpload({
     maxDurationSeconds,
     fileSizeBytes: input.fileSizeBytes,
+    mimeType: input.mimeType,
   });
 
   const { uploadId, videoId } = await createUploadSession({
@@ -59,6 +60,9 @@ export async function createUpload(
     uploadToken,
     uploadUrlExpiresAt: directUpload.expiresAt.toISOString(),
     status: "DRAFT",
+    provider: directUpload.provider,
+    uploadAuth: directUpload.uploadAuth,
+    uploadAddress: directUpload.uploadAddress,
   };
 }
 

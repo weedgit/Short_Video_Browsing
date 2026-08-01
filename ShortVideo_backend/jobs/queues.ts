@@ -10,6 +10,7 @@ export type UploadProcessingJob = {
   hlsUrl?: string;
   streamUrl?: string;
   durationMs?: number;
+  thumbnailUrl?: string;
 };
 
 const queueName = "upload-processing";
@@ -59,6 +60,7 @@ export async function processUploadJob(job: UploadProcessingJob): Promise<void> 
     hlsUrl: job.hlsUrl,
     streamUrl: job.streamUrl,
     durationMs: job.durationMs,
+    thumbnailUrl: job.thumbnailUrl,
   });
 }
 

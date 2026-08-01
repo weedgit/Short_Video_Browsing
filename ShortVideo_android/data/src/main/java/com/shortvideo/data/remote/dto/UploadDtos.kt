@@ -15,6 +15,9 @@ data class CreateUploadResponseDto(
     @SerializedName("uploadToken") val uploadToken: String,
     @SerializedName("uploadUrlExpiresAt") val uploadUrlExpiresAt: String,
     @SerializedName("status") val status: String,
+    @SerializedName("provider") val provider: String? = "alibaba_vod",
+    @SerializedName("uploadAuth") val uploadAuth: String? = null,
+    @SerializedName("uploadAddress") val uploadAddress: String? = null,
 )
 
 data class UploadProgressRequestDto(

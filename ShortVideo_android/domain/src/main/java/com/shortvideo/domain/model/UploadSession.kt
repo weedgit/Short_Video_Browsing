@@ -16,6 +16,9 @@ data class UploadSession(
     val hashtags: List<String> = emptyList(),
     val category: String? = null,
     val errorMessage: String? = null,
+    val provider: String = "alibaba_vod",
+    val uploadAuth: String? = null,
+    val uploadAddress: String? = null,
 )
 
 data class VideoFileInfo(

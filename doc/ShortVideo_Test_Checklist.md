@@ -1,6 +1,6 @@
 # ShortVideo — Local Test Guide & Checklist
 
-Yes — you can test almost everything **locally**. Cloudflare Stream and real FCM are optional for a first pass; the Android app falls back to mock sample videos if the feed API is empty or unreachable.
+Yes — you can test almost everything **locally**. Alibaba VOD credentials are optional for a first pass; without them the API uses a **dev upload** path, and the Android app can fall back to mock sample videos if the feed is empty.
 
 ---
 
@@ -12,12 +12,12 @@ Yes — you can test almost everything **locally**. Cloudflare Stream and real F
 | API server | Yes | `npm run dev` or Docker |
 | PostgreSQL + Redis | Yes | Docker Compose |
 | Admin console | Yes | Vite on `localhost:5173` |
-| Feed with real HLS | Partial | Needs Cloudflare Stream credentials + published videos |
+| Feed with real HLS | Partial | Needs Alibaba VOD + CDN + published videos |
 | Feed without cloud | Yes | Mock MP4 URLs when API empty/fails |
-| Upload → Stream processing | Partial | Needs Cloudflare; otherwise use `dev-complete` in non-prod |
+| Upload → VOD processing | Partial | Needs Alibaba keys; otherwise `dev-complete` |
 | Real push (FCM) | No (stub) | Token registers to API; push delivery is a log stub until Firebase is configured |
 
-**Recommended first local path:** Docker (Postgres + Redis + API) → Android emulator → Admin in browser. Skip Cloudflare and FCM until feed/social UI is solid.
+**Recommended first local path:** Docker (Postgres + Redis + API) → Android emulator → Admin in browser. Skip Alibaba VOD and FCM until feed/social UI is solid.
 
 ---
 
@@ -36,7 +36,7 @@ Yes — you can test almost everything **locally**. Cloudflare Stream and real F
 
 | Service | Required for | Without it |
 |---------|--------------|------------|
-| **Cloudflare Stream** | Real HLS upload/playback | Mock feed MP4s; upload may use dev URLs |
+| **Alibaba VOD + CDN** | Real China upload/playback | Mock feed MP4s; upload uses `dev-complete` |
 | **Admin console** (`ShortVideo_admin`) | Moderation UI | Use Swagger/curl against `/v1/admin` |
 | **Firebase / FCM** | Real device push | Inbox still works in-app; push is stubbed |
 | **Physical phone** | Real network / camera | Emulator is enough for most checks |
@@ -185,7 +185,7 @@ Use this as a manual QA list. Check boxes as you go.
 - [ ] Preview plays
 - [ ] Publish with description / hashtags
 - [ ] Progress / completion UI
-- [ ] After Cloudflare (or dev-complete), video appears in feed/profile
+- [ ] After Alibaba VOD (or dev-complete), video appears in feed/profile
 
 ### 4.6 Profile
 
@@ -241,7 +241,7 @@ Use this as a manual QA list. Check boxes as you go.
 2. Register + login (curl or app)  
 3. Android Home: swipe, UI chrome, mute, seek  
 4. Like / comment / follow (need two accounts for best follow/inbox test)  
-5. Upload one short clip (Cloudflare or skip)  
+5. Upload one short clip (Alibaba VOD or skip)  
 6. Profile grid + Discover search  
 7. Inbox after social actions  
 8. Admin login + moderate a video / report  
@@ -287,7 +287,7 @@ Swagger UI (if enabled): open docs route from backend README / `/docs` as config
 
 | Gap | Need |
 |-----|------|
-| Production HLS quality / signed URL expiry | Cloudflare Stream account + keys in `.env` |
+| Production HLS quality / CDN | Alibaba VOD + CDN domain + keys in `.env` |
 | Real push notifications on lock screen | Firebase project + `google-services.json` + `firebase-admin` |
 | True 3G stall metrics at scale | Network throttling + many real assets |
 | Managed cloud Postgres/Redis failover | Cloud provider staging |
@@ -303,4 +303,4 @@ Swagger UI (if enabled): open docs route from backend README / `/docs` as config
 3. Auth + at least one of: like, comment, or follow persists via API.  
 4. App does not crash when API is down (mock or empty state).  
 
-Everything else (Cloudflare upload, admin, FCM) can follow after this bar is green.
+Everything else (Alibaba upload, admin, FCM) can follow after this bar is green.

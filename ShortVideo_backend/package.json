@@ -19,6 +19,9 @@
     "node": ">=20"
   },
   "dependencies": {
+    "@alicloud/credentials": "^2.4.5",
+    "@alicloud/openapi-client": "^0.4.15",
+    "@alicloud/vod20170321": "^3.11.3",
     "@prisma/client": "^6.5.0",
     "bcryptjs": "^3.0.3",
     "bullmq": "^5.40.0",

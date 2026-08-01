@@ -33,6 +33,9 @@ fun CreateUploadResponseDto.toEntity(
         category = publish.category,
         errorMessage = null,
         createdAtMs = System.currentTimeMillis(),
+        provider = provider ?: "alibaba_vod",
+        uploadAuth = uploadAuth,
+        uploadAddress = uploadAddress,
     )
 
 fun UploadSessionEntity.toDomain(): UploadSession =
@@ -52,6 +55,9 @@ fun UploadSessionEntity.toDomain(): UploadSession =
         hashtags = gson.fromJson(hashtagsJson, stringListType) ?: emptyList(),
         category = category,
         errorMessage = errorMessage,
+        provider = provider,
+        uploadAuth = uploadAuth,
+        uploadAddress = uploadAddress,
     )
 
 fun UploadSession.toEntity(): UploadSessionEntity =
@@ -72,4 +78,7 @@ fun UploadSession.toEntity(): UploadSessionEntity =
         category = category,
         errorMessage = errorMessage,
         createdAtMs = System.currentTimeMillis(),
+        provider = provider,
+        uploadAuth = uploadAuth,
+        uploadAddress = uploadAddress,
     )

@@ -1,6 +1,9 @@
 export {
+  isAlibabaVodConfigured,
   isCloudflareConfigured,
   resolveSignedPlaybackUrl,
   createDirectUpload,
   buildAssetPlaybackUrls,
-} from "./cloudflare";
+  fetchPlaybackUrls,
+  resolveThumbnailUrl,
+} from "./alibaba-vod";

@@ -176,6 +176,7 @@ export async function finalizeProcessedVideo(params: {
   hlsUrl?: string;
   streamUrl?: string;
   durationMs?: number;
+  thumbnailUrl?: string;
 }): Promise<void> {
   const prisma = getPrismaClient();
   await prisma.video.update({
@@ -185,7 +186,8 @@ export async function finalizeProcessedVideo(params: {
       hlsUrl: params.hlsUrl,
       streamUrl: params.streamUrl,
       durationMs: params.durationMs ?? undefined,
-      status: "PROCESSING",
+      thumbnailUrl: params.thumbnailUrl ?? undefined,
+      status: params.hlsUrl || params.streamUrl ? "READY" : "PROCESSING",
     },
   });
 }

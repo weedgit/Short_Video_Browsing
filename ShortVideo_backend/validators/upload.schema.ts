@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-/** Any video/* MIME — container may still be rejected by Cloudflare Stream if unsupported. */
+/** Any video/* MIME — rare codecs may still be rejected by Alibaba VOD after upload. */
 export const createUploadSchema = z.object({
   mimeType: z
     .string()

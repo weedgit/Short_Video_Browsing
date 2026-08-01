@@ -9,7 +9,7 @@ import com.shortvideo.data.local.entity.UploadSessionEntity
 
 @Database(
     entities = [AuthTokenEntity::class, UploadSessionEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false,
 )
 abstract class AuthDatabase : RoomDatabase() {

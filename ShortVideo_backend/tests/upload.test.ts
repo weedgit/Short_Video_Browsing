@@ -186,19 +186,20 @@ describeUpload("Upload endpoints", () => {
   it("handles duplicate webhook events idempotently (TEST-013)", async () => {
     const app = await appPromise;
     const payload = {
-      uid: "cf-test-asset",
-      status: { state: "ready" },
-      duration: 12,
+      EventType: "StreamTranscodeComplete",
+      VideoId: "ali-test-video",
+      Status: "success",
+      Duration: "12",
     };
 
     const first = await request(app)
-      .post("/v1/webhooks/cloudflare/stream")
-      .set("cf-webhook-id", "evt-duplicate-1")
+      .post("/v1/webhooks/alibaba/vod")
+      .set("x-vod-request-id", "evt-duplicate-1")
       .send(payload);
 
     const second = await request(app)
-      .post("/v1/webhooks/cloudflare/stream")
-      .set("cf-webhook-id", "evt-duplicate-1")
+      .post("/v1/webhooks/alibaba/vod")
+      .set("x-vod-request-id", "evt-duplicate-1")
       .send(payload);
 
     expect(first.status).toBeGreaterThanOrEqual(200);

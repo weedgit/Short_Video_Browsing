@@ -21,4 +21,7 @@ data class UploadSessionEntity(
     val category: String?,
     val errorMessage: String?,
     val createdAtMs: Long,
+    val provider: String = "alibaba_vod",
+    val uploadAuth: String? = null,
+    val uploadAddress: String? = null,
 )

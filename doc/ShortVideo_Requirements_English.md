@@ -20,7 +20,7 @@ a TikTok-like vertical short-video application.
 -   Managed PostgreSQL
 -   Managed Redis
 -   Docker deployment
--   Cloudflare Stream or AWS VOD
+-   **Alibaba Cloud ApsaraVideo VOD + CDN** (China; not Cloudflare)
 -   Firebase Cloud Messaging
 
 
@@ -79,20 +79,18 @@ a TikTok-like vertical short-video application.
 
 ## 6. Video Upload & Publishing
 
--   Upload uses a direct-to-Cloudflare-Stream (or compatible provider)
-    signed URL flow: `POST /v1/uploads` creates an upload session and
-    returns an `uploadUrl` and short-lived `uploadToken`.
+-   Upload uses Alibaba Cloud VOD (`CreateUploadVideo` → OSS upload →
+    HTTP callback). Compatible direct-upload credentials are returned to
+    the Android client (`uploadAuth` / `uploadAddress`).
 -   Clients report progress via `PATCH /v1/uploads/:uploadId/progress` and
-    finalize the asset through the provider's webhook
-    (`POST /v1/webhooks/*`), which transitions the video to `PROCESSING`
-    and then `READY`.
+    finalize the asset through the VOD webhook
+    (`POST /v1/webhooks/alibaba/vod`), which transitions the video to
+    `PROCESSING` / `READY`.
 -   `POST /v1/videos/:videoId/publish` attaches the final `description`,
-    `hashtags`, and `category` and marks the video `READY` for the feed.
+    `hashtags`, and `category` and marks the video ready for the feed.
 -   A single active upload per user is enforced; in-flight uploads can be
     cancelled with `DELETE /v1/uploads/:uploadId`.
--   Thumbnails default to the Cloudflare Stream-generated frame
-    (`https://videodelivery.net/{assetId}/thumbnails/thumbnail.jpg`) unless
-    an explicit `thumbnailUrl` is provided.
+-   Thumbnails prefer VOD cover URLs from callbacks / `GetPlayInfo`.
 
 ## 7. User Profile & Discovery
 
