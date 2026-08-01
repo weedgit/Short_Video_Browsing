@@ -12,7 +12,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Accepts any `video/*` MIME (and common extensions such as AVI/MKV).
+ * Accepts any video MIME type (and common extensions such as AVI/MKV).
  * Size and duration limits still apply when duration can be read.
  */
 private const val MAX_FILE_SIZE_BYTES = 1_073_741_824L
