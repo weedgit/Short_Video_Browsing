@@ -1,4 +1,7 @@
 import { Router } from "express";
+import multer from "multer";
+import path from "node:path";
+import { mkdirSync } from "node:fs";
 import { authenticate } from "../middleware/authenticate";
 import { optionalAuthenticate } from "../middleware/optionalAuthenticate";
 import {
@@ -11,15 +14,40 @@ import {
   getUserProfileHandler,
   getUserVideosHandler,
   getVideoCommentsHandler,
+  patchMyProfileHandler,
   postDeviceFcmHandler,
   postFollowUserHandler,
   postInboxItemReadHandler,
   postInboxReadAllHandler,
   postLikeVideoHandler,
+  postMyAvatarHandler,
   postReportHandler,
   postSaveVideoHandler,
   postVideoCommentHandler,
 } from "../controllers/social.controller";
+
+const avatarDir = path.resolve(process.cwd(), "storage", "avatars");
+mkdirSync(avatarDir, { recursive: true });
+
+const avatarUpload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, avatarDir),
+    filename: (req, file, cb) => {
+      const userId = req.userId ?? "anon";
+      const ext = path.extname(file.originalname || "").toLowerCase() || ".jpg";
+      const safeExt = [".jpg", ".jpeg", ".png", ".webp", ".gif"].includes(ext) ? ext : ".jpg";
+      cb(null, `${userId}-${Date.now()}${safeExt}`);
+    },
+  }),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (!file.mimetype.startsWith("image/")) {
+      cb(new Error("Only image files are allowed for avatars."));
+      return;
+    }
+    cb(null, true);
+  },
+});
 
 export function createSocialVideoRouter(): Router {
   const router = Router();
@@ -39,6 +67,13 @@ export function createSocialUserRouter(): Router {
 
   // NOTE: literal routes must be registered before the ":userId" wildcard routes.
   router.get("/me/profile", authenticate, getMyProfileHandler);
+  router.patch("/me/profile", authenticate, patchMyProfileHandler);
+  router.post(
+    "/me/avatar",
+    authenticate,
+    avatarUpload.single("avatar"),
+    postMyAvatarHandler,
+  );
   router.post("/:userId/follow", authenticate, postFollowUserHandler);
   router.delete("/:userId/follow", authenticate, deleteFollowUserHandler);
   router.get("/:userId/videos", optionalAuthenticate, getUserVideosHandler);

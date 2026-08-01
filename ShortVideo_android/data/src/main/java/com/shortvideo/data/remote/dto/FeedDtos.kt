@@ -84,6 +84,7 @@ data class UserProfileDto(
     @SerializedName("videoCount") val videoCount: Long = 0,
     @SerializedName("isFollowing") val isFollowing: Boolean = false,
     @SerializedName("isSelf") val isSelf: Boolean = false,
+    @SerializedName("isMe") val isMe: Boolean = false,
 )
 
 data class ProfileVideoItemDto(
@@ -128,4 +129,10 @@ data class RegisterDeviceRequestDto(
     @SerializedName("deviceId") val deviceId: String,
     @SerializedName("fcmToken") val fcmToken: String,
     @SerializedName("platform") val platform: String = "android",
+)
+
+data class UpdateProfileRequestDto(
+    @SerializedName("displayName") val displayName: String? = null,
+    @SerializedName("bio") val bio: String? = null,
+    @SerializedName("avatarUrl") val avatarUrl: String? = null,
 )

@@ -31,6 +31,8 @@ interface ProfileRepository {
     suspend fun getMyProfile(): UserProfile
     suspend fun getProfile(userId: String): UserProfile
     suspend fun getProfileVideos(userId: String): List<ProfileVideoItem>
+    suspend fun updateMyProfile(displayName: String?, bio: String?): UserProfile
+    suspend fun uploadAvatar(imageBytes: ByteArray, mimeType: String, fileName: String): UserProfile
 }
 
 interface DiscoverRepository {

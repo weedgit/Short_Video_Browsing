@@ -190,6 +190,8 @@ Use this as a manual QA list. Check boxes as you go.
 ### 4.6 Profile
 
 - [ ] Own profile: avatar, name, bio, counts
+- [ ] Edit profile: change display name / bio and save
+- [ ] Change avatar from gallery; new photo shows after upload
 - [ ] 3-column video grid
 - [ ] Settings: logout / delete account / password reset entry
 - [ ] Other user profile + follow (if navigated)

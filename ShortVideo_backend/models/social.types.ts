@@ -40,6 +40,8 @@ export type UserProfile = {
   likeCount: number;
   isFollowing: boolean;
   isMe: boolean;
+  /** Android client field (same as isMe). */
+  isSelf: boolean;
 };
 
 export type UserVideoSummary = {

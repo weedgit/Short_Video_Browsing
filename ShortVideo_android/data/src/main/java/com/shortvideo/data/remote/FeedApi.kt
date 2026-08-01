@@ -13,11 +13,16 @@ import com.shortvideo.data.remote.dto.PlaybackBatchRequestDto
 import com.shortvideo.data.remote.dto.PlaybackBatchResponseDto
 import com.shortvideo.data.remote.dto.ProfileVideosDto
 import com.shortvideo.data.remote.dto.RegisterDeviceRequestDto
+import com.shortvideo.data.remote.dto.UpdateProfileRequestDto
 import com.shortvideo.data.remote.dto.UserProfileDto
+import okhttp3.MultipartBody
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Multipart
+import retrofit2.http.PATCH
 import retrofit2.http.POST
+import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -67,6 +72,17 @@ interface SocialApi {
 interface ProfileApi {
     @GET("v1/users/me/profile")
     suspend fun getMyProfile(): ApiEnvelope<UserProfileDto>
+
+    @PATCH("v1/users/me/profile")
+    suspend fun updateMyProfile(
+        @Body body: UpdateProfileRequestDto,
+    ): ApiEnvelope<UserProfileDto>
+
+    @Multipart
+    @POST("v1/users/me/avatar")
+    suspend fun uploadAvatar(
+        @Part avatar: MultipartBody.Part,
+    ): ApiEnvelope<UserProfileDto>
 
     @GET("v1/users/{userId}/profile")
     suspend fun getProfile(@Path("userId") userId: String): ApiEnvelope<UserProfileDto>

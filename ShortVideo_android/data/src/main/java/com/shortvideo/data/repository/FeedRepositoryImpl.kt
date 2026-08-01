@@ -11,6 +11,7 @@ import com.shortvideo.data.remote.dto.CreateCommentRequestDto
 import com.shortvideo.data.remote.dto.PlaybackBatchRequestDto
 import com.shortvideo.data.remote.dto.PlaybackEventRequestDto
 import com.shortvideo.data.remote.dto.RegisterDeviceRequestDto
+import com.shortvideo.data.remote.dto.UpdateProfileRequestDto
 import com.shortvideo.data.source.MockFeedDataSource
 import com.shortvideo.domain.model.FeedPage
 import com.shortvideo.domain.model.InboxNotification
@@ -30,6 +31,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 
 @Singleton
 class FeedRepositoryImpl @Inject constructor(
@@ -143,6 +147,24 @@ class ProfileRepositoryImpl @Inject constructor(
 
     override suspend fun getProfileVideos(userId: String): List<ProfileVideoItem> =
         profileApi.getProfileVideos(userId).data?.items?.map { it.toDomain() }.orEmpty()
+
+    override suspend fun updateMyProfile(displayName: String?, bio: String?): UserProfile =
+        profileApi.updateMyProfile(
+            UpdateProfileRequestDto(
+                displayName = displayName,
+                bio = bio,
+            ),
+        ).data!!.toDomain()
+
+    override suspend fun uploadAvatar(
+        imageBytes: ByteArray,
+        mimeType: String,
+        fileName: String,
+    ): UserProfile {
+        val body = imageBytes.toRequestBody(mimeType.toMediaTypeOrNull())
+        val part = MultipartBody.Part.createFormData("avatar", fileName, body)
+        return profileApi.uploadAvatar(part).data!!.toDomain()
+    }
 }
 
 @Singleton

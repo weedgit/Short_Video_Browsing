@@ -105,14 +105,19 @@ export async function getFeedPage(
       ])
     : [new Set<string>(), new Set<string>(), new Set<string>()];
 
-  const items = pageVideos.map((video) => {
-    const signed = resolveSignedPlaybackUrl({
-      cloudflareAssetId: video.cloudflareAssetId,
-      hlsUrl: video.hlsUrl,
-      streamUrl: video.streamUrl,
-    });
+  const items = pageVideos.flatMap((video) => {
+    let signed;
+    try {
+      signed = resolveSignedPlaybackUrl({
+        cloudflareAssetId: video.cloudflareAssetId,
+        hlsUrl: video.hlsUrl,
+        streamUrl: video.streamUrl,
+      });
+    } catch {
+      return [];
+    }
 
-    return {
+    return [{
       id: video.id,
       streamUrl: signed.url,
       playbackFormat: signed.format,
@@ -133,7 +138,7 @@ export async function getFeedPage(
       isFollowing: followingSet.has(video.userId),
       isSaved: savedSet.has(video.id),
       musicLabel: video.musicLabel,
-    };
+    }];
   });
 
   const lastVideo = pageVideos.at(-1);

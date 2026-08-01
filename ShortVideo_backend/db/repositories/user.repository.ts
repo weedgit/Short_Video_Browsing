@@ -42,6 +42,24 @@ export async function updateUserPassword(userId: string, passwordHash: string): 
   });
 }
 
+export async function updateUserProfileFields(
+  userId: string,
+  data: {
+    displayName?: string;
+    bio?: string | null;
+    avatarUrl?: string | null;
+  },
+): Promise<User> {
+  return getPrismaClient().user.update({
+    where: { id: userId },
+    data: {
+      ...(data.displayName !== undefined ? { displayName: data.displayName } : {}),
+      ...(data.bio !== undefined ? { bio: data.bio } : {}),
+      ...(data.avatarUrl !== undefined ? { avatarUrl: data.avatarUrl } : {}),
+    },
+  });
+}
+
 export async function softDeleteUser(userId: string): Promise<User> {
   return getPrismaClient().user.update({
     where: { id: userId },

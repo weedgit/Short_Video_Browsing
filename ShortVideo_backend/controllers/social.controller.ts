@@ -18,6 +18,8 @@ import {
   unfollowUser,
   unlikeVideo,
   unsaveVideo,
+  updateMyAvatarUrl,
+  updateMyProfile,
 } from "../service/social.service";
 import {
   commentCreateSchema,
@@ -26,6 +28,7 @@ import {
   discoverQuerySchema,
   inboxQuerySchema,
   registerFcmTokenSchema,
+  updateProfileSchema,
   userVideosQuerySchema,
 } from "../validators/social.schema";
 import type { z } from "zod";
@@ -123,6 +126,28 @@ export const getMyProfileHandler = asyncHandler(async (req: Request, res: Respon
   const userId = requireUserId(req);
   const profile = await getUserProfile(userId, userId);
   sendData(res, profile);
+});
+
+export const patchMyProfileHandler = asyncHandler(async (req: Request, res: Response) => {
+  const body = parseBody(updateProfileSchema, req.body);
+  const profile = await updateMyProfile(requireUserId(req), body);
+  sendData(res, profile);
+});
+
+export const postMyAvatarHandler = asyncHandler(async (req: Request, res: Response) => {
+  const file = (req as Request & { file?: Express.Multer.File }).file;
+  if (!file) {
+    throw new AppError(400, "VALIDATION_ERROR", "Avatar image file is required.");
+  }
+
+  const publicUrl = `/avatars/${file.filename}`;
+  // Absolute URL helps Android Coil load across hosts (emulator/VM).
+  const host = req.get("host");
+  const proto = (req.headers["x-forwarded-proto"] as string) || req.protocol;
+  const absoluteUrl = host ? `${proto}://${host}${publicUrl}` : publicUrl;
+
+  const profile = await updateMyAvatarUrl(requireUserId(req), absoluteUrl);
+  sendData(res, profile, 201);
 });
 
 export const getUserProfileHandler = asyncHandler(async (req: Request, res: Response) => {

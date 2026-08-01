@@ -138,11 +138,14 @@ export async function fetchPlaybackUrls(videoId: string): Promise<{
 
     const rewrite = (url: string | null | undefined): string | null => {
       if (!url) return null;
-      const cdnDomain = config.alibaba.vodCdnDomain;
-      if (!cdnDomain) return url;
+      const cdnHost = config.alibaba.vodCdnDomain
+        ?.replace(/^https?:\/\//, "")
+        .replace(/\/$/, "")
+        .trim();
+      if (!cdnHost) return url;
       try {
         const parsed = new URL(url);
-        parsed.host = cdnDomain.replace(/^https?:\/\//, "").replace(/\/$/, "");
+        parsed.host = cdnHost;
         return parsed.toString();
       } catch {
         return url;
@@ -188,9 +191,24 @@ export function resolveThumbnailUrl(source: {
   return null;
 }
 
+function isPlayableHttpUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return (
+      (parsed.protocol === "https:" || parsed.protocol === "http:") &&
+      Boolean(parsed.hostname)
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function resolveSignedPlaybackUrl(source: PlaybackSource): SignedPlaybackUrl {
   const expiresAt = new Date(Date.now() + config.feedSignedUrlTtlSeconds * 1000);
-  const directUrl = source.hlsUrl ?? source.streamUrl;
+  const candidates = [source.hlsUrl, source.streamUrl].filter(
+    (value): value is string => Boolean(value && isPlayableHttpUrl(value)),
+  );
+  const directUrl = candidates[0];
   if (!directUrl) {
     throw new Error("Video has no playback URL configured");
   }
@@ -198,6 +216,6 @@ export function resolveSignedPlaybackUrl(source: PlaybackSource): SignedPlayback
   return {
     url: directUrl,
     expiresAt,
-    format: source.hlsUrl || directUrl.includes(".m3u8") ? "hls" : "mp4",
+    format: directUrl.includes(".m3u8") ? "hls" : "mp4",
   };
 }

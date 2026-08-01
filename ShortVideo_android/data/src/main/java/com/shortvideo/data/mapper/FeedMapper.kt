@@ -67,7 +67,7 @@ fun UserProfileDto.toDomain(): UserProfile =
         followingCount = followingCount,
         videoCount = videoCount,
         isFollowing = isFollowing,
-        isSelf = isSelf,
+        isSelf = isSelf || isMe,
     )
 
 fun ProfileVideoItemDto.toDomain(): ProfileVideoItem =

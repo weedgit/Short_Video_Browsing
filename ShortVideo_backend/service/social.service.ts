@@ -32,7 +32,7 @@ import {
   unsaveVideo as unsaveVideoRepo,
 } from "../db/repositories/social.repository";
 import { findFcmTokensForUser, upsertFcmToken } from "../db/repositories/userDevice.repository";
-import { findUserById } from "../db/repositories/user.repository";
+import { findUserById, updateUserProfileFields } from "../db/repositories/user.repository";
 import { sendPushNotification } from "../integrations/push";
 import { resolveThumbnailUrl } from "../integrations/cloudflare";
 import type {
@@ -54,6 +54,7 @@ import type {
   DiscoverQueryInput,
   InboxQueryInput,
   RegisterFcmTokenInput,
+  UpdateProfileInput,
   UserVideosQueryInput,
 } from "../validators/social.schema";
 
@@ -245,7 +246,37 @@ export async function getUserProfile(targetUserId: string, viewerId?: string): P
     likeCount,
     isFollowing: Boolean(viewerFollows),
     isMe: viewerId === user.id,
+    isSelf: viewerId === user.id,
   };
+}
+
+export async function updateMyProfile(
+  userId: string,
+  input: UpdateProfileInput,
+): Promise<UserProfile> {
+  if (
+    input.displayName === undefined &&
+    input.bio === undefined &&
+    input.avatarUrl === undefined
+  ) {
+    throw new AppError(400, "VALIDATION_ERROR", "No profile fields to update.");
+  }
+
+  await updateUserProfileFields(userId, {
+    displayName: input.displayName,
+    bio: input.bio,
+    avatarUrl: input.avatarUrl,
+  });
+
+  return getUserProfile(userId, userId);
+}
+
+export async function updateMyAvatarUrl(
+  userId: string,
+  avatarUrl: string,
+): Promise<UserProfile> {
+  await updateUserProfileFields(userId, { avatarUrl });
+  return getUserProfile(userId, userId);
 }
 
 export async function listUserVideos(

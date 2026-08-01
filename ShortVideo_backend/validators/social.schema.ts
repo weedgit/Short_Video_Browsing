@@ -36,8 +36,15 @@ export const createReportSchema = z.object({
   reason: z.string().trim().min(1, "reason is required.").max(500),
 });
 
+export const updateProfileSchema = z.object({
+  displayName: z.string().trim().min(1).max(50).optional(),
+  bio: z.string().trim().max(200).optional().nullable(),
+  avatarUrl: z.string().trim().url().max(2048).optional().nullable(),
+});
+
 export type CommentCreateInput = z.output<typeof commentCreateSchema>;
 export type CommentsQueryInput = z.output<typeof commentsQuerySchema>;
+export type UpdateProfileInput = z.output<typeof updateProfileSchema>;
 export type DiscoverQueryInput = z.output<typeof discoverQuerySchema>;
 export type UserVideosQueryInput = z.output<typeof userVideosQuerySchema>;
 export type InboxQueryInput = z.output<typeof inboxQuerySchema>;

@@ -3,6 +3,8 @@ import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import pinoHttp from "pino-http";
+import path from "node:path";
+import { mkdirSync } from "node:fs";
 import { config } from "./config";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { requestIdMiddleware } from "./middleware/requestId";
@@ -48,6 +50,10 @@ export async function createApp(): Promise<Express> {
       legacyHeaders: false,
     }),
   );
+
+  const avatarDir = path.resolve(process.cwd(), "storage", "avatars");
+  mkdirSync(avatarDir, { recursive: true });
+  app.use("/avatars", express.static(avatarDir));
 
   app.use(await createRoutes());
   app.use(notFoundHandler);
