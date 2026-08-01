@@ -22,4 +22,5 @@ dist/
 .gradle/
 coverage/
 .vitest/
+doc/
 *.log
