@@ -273,7 +273,7 @@ private fun UploadPreviewStep(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun UploadPublishStep(
     description: String,
@@ -292,6 +292,8 @@ private fun UploadPublishStep(
     onPublish: () -> Unit,
     onBack: () -> Unit,
 ) {
+    var categoryExpanded by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -370,12 +372,39 @@ private fun UploadPublishStep(
             }
         }
 
-        OutlinedTextField(
-            value = category,
-            onValueChange = onCategoryChanged,
-            label = { Text("Category") },
-            modifier = Modifier.fillMaxWidth(),
-        )
+        ExposedDropdownMenuBox(
+            expanded = categoryExpanded,
+            onExpandedChange = { categoryExpanded = !categoryExpanded },
+        ) {
+            OutlinedTextField(
+                value = category,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Category") },
+                placeholder = { Text("Select a category") },
+                trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded)
+                },
+                modifier = Modifier
+                    .menuAnchor()
+                    .fillMaxWidth(),
+            )
+            ExposedDropdownMenu(
+                expanded = categoryExpanded,
+                onDismissRequest = { categoryExpanded = false },
+            ) {
+                VideoCategories.ALL.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option) },
+                        onClick = {
+                            onCategoryChanged(option)
+                            categoryExpanded = false
+                        },
+                    )
+                }
+            }
+        }
+
         errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         Button(
             onClick = onPublish,
