@@ -142,7 +142,7 @@ async function seedVideosForFeedTests(): Promise<void> {
         durationMs: 10_000 + index * 1_000,
         status: "READY",
         streamUrl: "https://download.samplelib.com/mp4/sample-10s.mp4",
-        category: "Test",
+        category: "Comedy",
         hashtags: {
           create: [{ tag: "#test" }],
         },

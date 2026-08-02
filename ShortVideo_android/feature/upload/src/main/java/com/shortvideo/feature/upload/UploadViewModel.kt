@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.shortvideo.domain.model.PublishVideoRequest
 import com.shortvideo.domain.model.UploadStatus
+import com.shortvideo.domain.model.VideoCategories
 import com.shortvideo.domain.model.VideoFileInfo
 import com.shortvideo.domain.repository.UploadRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -133,7 +134,12 @@ class UploadViewModel @Inject constructor(
     }
 
     fun onCategoryChanged(value: String) {
-        _uiState.update { it.copy(category = value, errorMessage = null) }
+        _uiState.update {
+            it.copy(
+                category = value.takeIf { selected -> selected in VideoCategories.ALL }.orEmpty(),
+                errorMessage = null,
+            )
+        }
     }
 
     fun onPublishClicked() {

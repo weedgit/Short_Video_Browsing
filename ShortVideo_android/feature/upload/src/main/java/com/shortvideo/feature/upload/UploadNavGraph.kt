@@ -16,6 +16,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -41,6 +45,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import com.shortvideo.core.DestinationRoute
 import com.shortvideo.domain.model.UploadStatus
+import com.shortvideo.domain.model.VideoCategories
 import com.shortvideo.feature.upload.camera.CameraCaptureScreen
 
 @Composable
@@ -253,6 +258,7 @@ private fun UploadPreviewStep(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun UploadPublishStep(
     description: String,
@@ -266,6 +272,8 @@ private fun UploadPublishStep(
     onPublish: () -> Unit,
     onBack: () -> Unit,
 ) {
+    var categoryExpanded by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -286,12 +294,38 @@ private fun UploadPublishStep(
             placeholder = { Text("#fun #shortvideo") },
             modifier = Modifier.fillMaxWidth(),
         )
-        OutlinedTextField(
-            value = category,
-            onValueChange = onCategoryChanged,
-            label = { Text("Category") },
-            modifier = Modifier.fillMaxWidth(),
-        )
+        ExposedDropdownMenuBox(
+            expanded = categoryExpanded,
+            onExpandedChange = { categoryExpanded = !categoryExpanded },
+        ) {
+            OutlinedTextField(
+                value = category,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Category") },
+                placeholder = { Text("Select a category") },
+                trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded)
+                },
+                modifier = Modifier
+                    .menuAnchor()
+                    .fillMaxWidth(),
+            )
+            ExposedDropdownMenu(
+                expanded = categoryExpanded,
+                onDismissRequest = { categoryExpanded = false },
+            ) {
+                VideoCategories.ALL.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option) },
+                        onClick = {
+                            onCategoryChanged(option)
+                            categoryExpanded = false
+                        },
+                    )
+                }
+            }
+        }
         errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         Button(
             onClick = onPublish,

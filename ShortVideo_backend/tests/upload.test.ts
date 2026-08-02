@@ -172,7 +172,7 @@ describeUpload("Upload endpoints", () => {
       .send({
         description: "My first upload",
         hashtags: ["#phase4"],
-        category: "Test",
+        category: "Comedy",
       });
 
     expect(publishResponse.status).toBe(200);
