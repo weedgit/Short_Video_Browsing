@@ -28,8 +28,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -41,7 +43,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -49,7 +50,6 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.shortvideo.domain.model.VideoComment
 import com.shortvideo.theme.PrimaryColor
-import com.shortvideo.theme.SurfaceElevated
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,6 +61,7 @@ fun CommentBottomSheet(
     onReport: (title: String, content: String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
 ) {
+    val colors = MaterialTheme.colorScheme
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var draft by remember { mutableStateOf("") }
     var replyTarget by remember { mutableStateOf<VideoComment?>(null) }
@@ -80,7 +81,8 @@ fun CommentBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = SurfaceElevated,
+        containerColor = colors.surface,
+        contentColor = colors.onSurface,
         shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
         modifier = modifier,
     ) {
@@ -97,7 +99,7 @@ fun CommentBottomSheet(
             ) {
                 Text(
                     text = "$commentCount comments",
-                    color = Color.White,
+                    color = colors.onSurface,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.align(Alignment.Center),
                 )
@@ -112,7 +114,7 @@ fun CommentBottomSheet(
                         .padding(horizontal = 4.dp, vertical = 4.dp),
                 )
             }
-            HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+            HorizontalDivider(color = colors.outline.copy(alpha = 0.6f))
             LazyColumn(
                 modifier = Modifier
                     .weight(1f, fill = true)
@@ -124,7 +126,7 @@ fun CommentBottomSheet(
                     item {
                         Text(
                             text = "Be the first to comment",
-                            color = Color.White.copy(alpha = 0.6f),
+                            color = colors.onSurfaceVariant,
                         )
                     }
                 }
@@ -140,7 +142,7 @@ fun CommentBottomSheet(
                         if (!expanded) {
                             Text(
                                 text = "View ${replies.size} replies",
-                                color = Color.White.copy(alpha = 0.7f),
+                                color = colors.onSurfaceVariant,
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 13.sp,
                                 modifier = Modifier
@@ -168,7 +170,7 @@ fun CommentBottomSheet(
                                 if (replies.size > 2) {
                                     Text(
                                         text = "Hide replies",
-                                        color = Color.White.copy(alpha = 0.7f),
+                                        color = colors.onSurfaceVariant,
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 13.sp,
                                         modifier = Modifier
@@ -193,7 +195,7 @@ fun CommentBottomSheet(
                 ) {
                     Text(
                         text = "Replying to ${target.authorName}",
-                        color = Color.White.copy(alpha = 0.7f),
+                        color = colors.onSurfaceVariant,
                         fontSize = 13.sp,
                         modifier = Modifier.weight(1f),
                     )
@@ -204,7 +206,7 @@ fun CommentBottomSheet(
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Cancel reply",
-                            tint = Color.White.copy(alpha = 0.7f),
+                            tint = colors.onSurfaceVariant,
                             modifier = Modifier.size(16.dp),
                         )
                     }
@@ -213,15 +215,15 @@ fun CommentBottomSheet(
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 24.dp),
             ) {
+                val canSend = draft.isNotBlank()
                 OutlinedTextField(
                     value = draft,
                     onValueChange = { draft = it },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
                     placeholder = {
                         Text(
                             if (replyTarget != null) {
@@ -232,28 +234,35 @@ fun CommentBottomSheet(
                         )
                     },
                     singleLine = true,
-                )
-                IconButton(
-                    onClick = {
-                        val text = draft.trim()
-                        if (text.isNotEmpty()) {
-                            val parentId = replyTarget?.let { target ->
-                                target.parentId ?: target.id
-                            }
-                            onSubmit(text, parentId)
-                            draft = ""
-                            replyTarget = null
+                    shape = RoundedCornerShape(percent = 50),
+                    colors = themedOutlinedFieldColors(),
+                    trailingIcon = {
+                        IconButton(
+                            onClick = {
+                                val text = draft.trim()
+                                if (text.isNotEmpty()) {
+                                    val parentId = replyTarget?.let { target ->
+                                        target.parentId ?: target.id
+                                    }
+                                    onSubmit(text, parentId)
+                                    draft = ""
+                                    replyTarget = null
+                                }
+                            },
+                            enabled = canSend,
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Send,
+                                contentDescription = "Send comment",
+                                tint = if (canSend) {
+                                    PrimaryColor
+                                } else {
+                                    colors.onSurface.copy(alpha = 0.35f)
+                                },
+                            )
                         }
                     },
-                    modifier = Modifier.size(48.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Send,
-                        contentDescription = "Send comment",
-                        tint = if (draft.isBlank()) Color.White.copy(alpha = 0.35f) else PrimaryColor,
-                        modifier = Modifier.size(28.dp),
-                    )
-                }
+                )
             }
             Spacer(modifier = Modifier.height(8.dp))
         }
@@ -265,17 +274,20 @@ private fun ReportVideoDialog(
     onDismiss: () -> Unit,
     onSend: (title: String, content: String) -> Unit,
 ) {
+    val colors = MaterialTheme.colorScheme
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
     val canSend = title.isNotBlank() && content.isNotBlank()
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = SurfaceElevated,
+        containerColor = colors.surface,
+        titleContentColor = colors.onSurface,
+        textContentColor = colors.onSurface,
         title = {
             Text(
                 text = "Report",
-                color = Color.White,
+                color = colors.onSurface,
                 fontWeight = FontWeight.Bold,
             )
         },
@@ -287,6 +299,7 @@ private fun ReportVideoDialog(
                     label = { Text("Title") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
+                    colors = themedOutlinedFieldColors(),
                 )
                 OutlinedTextField(
                     value = content,
@@ -297,6 +310,7 @@ private fun ReportVideoDialog(
                         .heightIn(min = 100.dp),
                     minLines = 3,
                     maxLines = 6,
+                    colors = themedOutlinedFieldColors(),
                 )
             }
         },
@@ -306,18 +320,39 @@ private fun ReportVideoDialog(
                     if (canSend) onSend(title.trim(), content.trim())
                 },
                 enabled = canSend,
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PrimaryColor,
+                    contentColor = colors.onPrimary,
+                    disabledContainerColor = colors.surfaceVariant,
+                    disabledContentColor = colors.onSurface.copy(alpha = 0.38f),
+                ),
             ) {
                 Text("Send")
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = Color.White.copy(alpha = 0.7f))
+                Text("Cancel", color = colors.onSurfaceVariant)
             }
         },
     )
 }
+
+@Composable
+private fun themedOutlinedFieldColors() = OutlinedTextFieldDefaults.colors(
+    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+    disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+    focusedBorderColor = PrimaryColor,
+    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+    cursorColor = PrimaryColor,
+    focusedLabelColor = PrimaryColor,
+    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    focusedContainerColor = MaterialTheme.colorScheme.surface,
+    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+)
 
 @Composable
 private fun CommentRow(
@@ -325,6 +360,7 @@ private fun CommentRow(
     isReply: Boolean,
     onReply: (VideoComment) -> Unit,
 ) {
+    val colors = MaterialTheme.colorScheme
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -336,26 +372,26 @@ private fun CommentRow(
             modifier = Modifier
                 .size(if (isReply) 28.dp else 36.dp)
                 .clip(CircleShape)
-                .background(Color(0xFF2A2A2A)),
+                .background(colors.surfaceVariant),
         )
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = comment.authorName,
-                color = Color.White.copy(alpha = 0.75f),
+                color = colors.onSurfaceVariant,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 13.sp,
             )
             if (!comment.replyToAuthorName.isNullOrBlank() && isReply) {
                 Text(
                     text = "Replying to ${comment.replyToAuthorName}",
-                    color = Color.White.copy(alpha = 0.45f),
+                    color = colors.onSurfaceVariant.copy(alpha = 0.8f),
                     fontSize = 12.sp,
                     modifier = Modifier.padding(top = 1.dp),
                 )
             }
             Text(
                 text = comment.text,
-                color = Color.White.copy(alpha = 0.95f),
+                color = colors.onSurface,
                 modifier = Modifier.padding(top = 2.dp),
                 fontSize = 14.sp,
             )
@@ -366,14 +402,14 @@ private fun CommentRow(
                 if (comment.createdAtLabel.isNotBlank()) {
                     Text(
                         text = comment.createdAtLabel,
-                        color = Color.White.copy(alpha = 0.45f),
+                        color = colors.onSurfaceVariant,
                         fontSize = 12.sp,
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                 }
                 Text(
                     text = "Reply",
-                    color = Color.White.copy(alpha = 0.7f),
+                    color = colors.onSurfaceVariant,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 12.sp,
                     modifier = Modifier.clickable { onReply(comment) },

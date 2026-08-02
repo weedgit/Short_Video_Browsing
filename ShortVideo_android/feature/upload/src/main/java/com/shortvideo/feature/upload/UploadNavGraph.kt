@@ -177,7 +177,8 @@ private fun UploadSourceStep(
         Text("Create", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            "Record a new video or choose one from your library.",
+            "Record a new video or choose one from your library. " +
+                "Alibaba VOD formats: MP4, MOV, AVI, MKV, WEBM, FLV, 3GP, MPEG, TS, VOB, WMV.",
             style = MaterialTheme.typography.bodyMedium,
         )
         Spacer(modifier = Modifier.height(24.dp))
@@ -198,7 +199,22 @@ private fun UploadSourceStep(
             onClick = {
                 permissionLauncher.launch(permissions.toTypedArray())
                 documentLauncher.launch(
-                    arrayOf("video/*"),
+                    arrayOf(
+                        "video/mp4",
+                        "video/quicktime",
+                        "video/webm",
+                        "video/x-msvideo",
+                        "video/avi",
+                        "video/x-matroska",
+                        "video/mpeg",
+                        "video/3gpp",
+                        "video/x-flv",
+                        "video/x-ms-wmv",
+                        "video/x-ms-asf",
+                        "video/mp2t",
+                        "video/ogg",
+                        "video/dvd",
+                    ),
                 )
             },
             modifier = Modifier.fillMaxWidth(),

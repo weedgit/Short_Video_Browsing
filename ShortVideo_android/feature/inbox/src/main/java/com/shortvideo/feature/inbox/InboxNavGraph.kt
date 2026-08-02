@@ -55,7 +55,6 @@ import coil.compose.AsyncImage
 import com.shortvideo.core.DestinationRoute
 import com.shortvideo.domain.model.InboxNotification
 import com.shortvideo.theme.PrimaryColor
-import com.shortvideo.theme.SubTextColor
 import com.shortvideo.theme.SurfaceElevated
 
 @Composable
@@ -77,7 +76,7 @@ fun InboxScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black),
+            .background(MaterialTheme.colorScheme.background),
     ) {
         Row(
             modifier = Modifier
@@ -91,12 +90,12 @@ fun InboxScreen(
                     text = "Messages",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 if (uiState.unreadCount > 0) {
                     Text(
                         text = "${uiState.unreadCount} unread",
-                        color = SubTextColor,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp,
                     )
                 }
@@ -108,7 +107,7 @@ fun InboxScreen(
             }
         }
 
-        HorizontalDivider(color = Color(0xFF2A2A2A), thickness = 0.5.dp)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
 
         when {
             uiState.isLoading -> {
@@ -125,7 +124,10 @@ fun InboxScreen(
                     contentAlignment = Alignment.Center,
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("No messages yet", color = SubTextColor)
+                        Text(
+                            "No messages yet",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                         Button(
                             onClick = viewModel::refresh,
                             modifier = Modifier.padding(top = 12.dp),
@@ -145,7 +147,7 @@ fun InboxScreen(
                             onClick = { viewModel.openMessage(item) },
                         )
                         HorizontalDivider(
-                            color = Color(0xFF1F1F1F),
+                            color = MaterialTheme.colorScheme.outline,
                             thickness = 0.5.dp,
                             modifier = Modifier.padding(start = 76.dp),
                         )
@@ -183,7 +185,7 @@ private fun MessageThreadRow(
             ) {
                 Text(
                     text = displayName,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = if (item.isRead) FontWeight.Medium else FontWeight.Bold,
                     fontSize = 16.sp,
                     maxLines = 1,
@@ -192,7 +194,11 @@ private fun MessageThreadRow(
                 )
                 Text(
                     text = item.createdAtLabel,
-                    color = if (item.isRead) SubTextColor else PrimaryColor,
+                    color = if (item.isRead) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        PrimaryColor
+                    },
                     fontSize = 12.sp,
                     fontWeight = if (item.isRead) FontWeight.Normal else FontWeight.SemiBold,
                 )
@@ -201,7 +207,11 @@ private fun MessageThreadRow(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = preview,
-                    color = if (item.isRead) SubTextColor else Color.White.copy(alpha = 0.9f),
+                    color = if (item.isRead) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f)
+                    },
                     fontWeight = if (item.isRead) FontWeight.Normal else FontWeight.Medium,
                     fontSize = 14.sp,
                     maxLines = 2,
@@ -232,7 +242,7 @@ private fun MessageDetailScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black),
+            .background(MaterialTheme.colorScheme.background),
     ) {
         Row(
             modifier = Modifier
@@ -244,7 +254,7 @@ private fun MessageDetailScreen(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
-                    tint = Color.White,
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
             MessageAvatar(item = message, size = 36.dp)
@@ -252,7 +262,7 @@ private fun MessageDetailScreen(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = headerName,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp,
                     maxLines = 1,
@@ -260,13 +270,13 @@ private fun MessageDetailScreen(
                 )
                 Text(
                     text = messageTypeLabel(message.type),
-                    color = SubTextColor,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                 )
             }
         }
 
-        HorizontalDivider(color = Color(0xFF2A2A2A), thickness = 0.5.dp)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
 
         LazyColumn(
             modifier = Modifier
@@ -278,7 +288,7 @@ private fun MessageDetailScreen(
             item {
                 Text(
                     text = message.createdAtLabel,
-                    color = SubTextColor,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -314,14 +324,14 @@ private fun IncomingMessageBubble(
         ) {
             Text(
                 text = title,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 15.sp,
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = body,
-                color = Color.White.copy(alpha = 0.92f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.92f),
                 fontSize = 15.sp,
                 lineHeight = 21.sp,
             )

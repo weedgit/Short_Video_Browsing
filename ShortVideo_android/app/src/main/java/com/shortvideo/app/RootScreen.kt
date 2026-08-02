@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -23,9 +24,7 @@ import androidx.navigation.compose.rememberNavController
 import com.shortvideo.app.component.BottomBar
 import com.shortvideo.app.navigation.AppNavHost
 import com.shortvideo.core.DestinationRoute
-import com.shortvideo.theme.Black
 import com.shortvideo.theme.ShortVideoTheme
-import com.shortvideo.theme.White
 
 @Composable
 fun RootScreen(
@@ -53,7 +52,7 @@ fun RootScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Black),
+                    .background(MaterialTheme.colorScheme.background),
             )
         }
         return
@@ -109,8 +108,8 @@ fun RootScreen(
 
     ShortVideoTheme(darkTheme = gate.isDarkTheme) {
         Scaffold(
-            containerColor = Black,
-            contentColor = White,
+            containerColor = MaterialTheme.colorScheme.background,
+            contentColor = MaterialTheme.colorScheme.onBackground,
             bottomBar = {
                 if (showBottomBar) {
                     BottomBar(

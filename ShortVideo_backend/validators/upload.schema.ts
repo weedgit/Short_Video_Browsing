@@ -1,13 +1,17 @@
 import { z } from "zod";
+import {
+  ALIBABA_VOD_VIDEO_FORMAT_HINT,
+  isAlibabaVodVideoMimeType,
+} from "../utils/vod-video-formats";
 
-/** Any video/* MIME — rare codecs may still be rejected by Alibaba VOD after upload. */
+/** MIME must be an Alibaba ApsaraVideo VOD supported video type. */
 export const createUploadSchema = z.object({
   mimeType: z
     .string()
     .trim()
     .min(1)
-    .refine((value) => value.toLowerCase().startsWith("video/"), {
-      message: "Only video MIME types are allowed.",
+    .refine((value) => isAlibabaVodVideoMimeType(value), {
+      message: `Unsupported video type. Use an Alibaba VOD format (${ALIBABA_VOD_VIDEO_FORMAT_HINT}).`,
     }),
   fileSizeBytes: z.coerce.number().int().positive(),
   durationMs: z.coerce.number().int().nonnegative().max(600_000).optional(),

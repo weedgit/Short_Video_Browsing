@@ -34,6 +34,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -60,7 +61,6 @@ import com.shortvideo.domain.model.DiscoverTab
 import com.shortvideo.domain.model.DiscoverVideo
 import com.shortvideo.domain.model.UserProfile
 import com.shortvideo.theme.PrimaryColor
-import com.shortvideo.theme.SubTextColor
 import com.shortvideo.theme.SurfaceElevated
 
 @Composable
@@ -73,7 +73,7 @@ fun DiscoverScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 16.dp)
             .padding(top = 16.dp),
     ) {
@@ -87,16 +87,16 @@ fun DiscoverScreen(
             shape = RoundedCornerShape(50),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = PrimaryColor,
-                unfocusedBorderColor = Color.White.copy(alpha = 0.28f),
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                 cursorColor = PrimaryColor,
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
-                focusedContainerColor = Color(0xFF1C1C1C),
-                unfocusedContainerColor = Color(0xFF1C1C1C),
-                focusedLeadingIconColor = Color.White,
-                unfocusedLeadingIconColor = Color.White.copy(alpha = 0.75f),
-                focusedPlaceholderColor = Color.White.copy(alpha = 0.45f),
-                unfocusedPlaceholderColor = Color.White.copy(alpha = 0.45f),
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                focusedLeadingIconColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
             ),
         )
 
@@ -120,7 +120,10 @@ fun DiscoverScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(text = uiState.errorMessage.orEmpty(), color = SubTextColor)
+                    Text(
+                        text = uiState.errorMessage.orEmpty(),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
             uiState.selectedTab == DiscoverTab.VIDEOS -> {
@@ -175,7 +178,7 @@ private fun DiscoverTabRow(
                 onClick = { onSelectTab(DiscoverTab.FRIENDS) },
             )
         }
-        HorizontalDivider(color = Color(0xFF2A2A2A), thickness = 0.5.dp)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
     }
 }
 
@@ -187,7 +190,11 @@ private fun DiscoverTabItem(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    val tint = if (selected) Color.White else SubTextColor
+    val tint = if (selected) {
+        MaterialTheme.colorScheme.onSurface
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
     Column(
         modifier = modifier
             .clickable(onClick = onClick)
@@ -212,7 +219,9 @@ private fun DiscoverTabItem(
             modifier = Modifier
                 .height(2.dp)
                 .fillMaxWidth(0.45f)
-                .background(if (selected) Color.White else Color.Transparent),
+                .background(
+                    if (selected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
+                ),
         )
     }
 }
@@ -265,7 +274,10 @@ private fun DiscoverVideosContent(
                             .padding(48.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text(text = "No videos found", color = SubTextColor)
+                        Text(
+                            text = "No videos found",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 }
             } else {
@@ -315,7 +327,7 @@ private fun DiscoverUsersContent(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center,
         ) {
-            Text(text = emptyMessage, color = SubTextColor)
+            Text(text = emptyMessage, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         return
     }
@@ -361,14 +373,14 @@ private fun DiscoverUserRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = user.displayName,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = "@${user.username}",
-                color = SubTextColor,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -381,8 +393,16 @@ private fun DiscoverUserRow(
                 pressedElevation = 0.dp,
             ),
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (user.isFollowing) Color(0xFF2A2A2A) else PrimaryColor,
-                contentColor = Color.White,
+                containerColor = if (user.isFollowing) {
+                    MaterialTheme.colorScheme.surfaceVariant
+                } else {
+                    PrimaryColor
+                },
+                contentColor = if (user.isFollowing) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    Color.White
+                },
             ),
             shape = RoundedCornerShape(8.dp),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),

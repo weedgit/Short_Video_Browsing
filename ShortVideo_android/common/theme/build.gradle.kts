@@ -27,6 +27,7 @@ android {
 }
 
 dependencies {
+    implementation(Libs.coreKtx)
     implementation(platform(Libs.composeBom))
     implementation(Libs.composeMaterial3)
     implementation(Libs.composeUi)

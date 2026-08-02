@@ -7,6 +7,7 @@ import { config } from "../config";
 import type { SignedPlaybackUrl } from "../models/feed.types";
 import type { DirectUploadResult } from "../models/upload.types";
 import { logger } from "../utils/logger";
+import { vodExtensionFromMime } from "../utils/vod-video-formats";
 
 type PlaybackSource = {
   /** Alibaba VOD VideoId (DB column: cloudflare_asset_id). */
@@ -37,17 +38,6 @@ function createVodClient(): Vod20170321 {
   return new Vod20170321(openApiConfig);
 }
 
-function extensionFromMime(mimeType: string): string {
-  const lower = mimeType.toLowerCase();
-  if (lower.includes("quicktime") || lower.includes("mov")) return "mov";
-  if (lower.includes("webm")) return "webm";
-  if (lower.includes("avi") || lower.includes("msvideo")) return "avi";
-  if (lower.includes("matroska") || lower.includes("mkv")) return "mkv";
-  if (lower.includes("mpeg")) return "mpg";
-  if (lower.includes("3gpp")) return "3gp";
-  return "mp4";
-}
-
 export async function createDirectUpload(params: {
   maxDurationSeconds: number;
   fileSizeBytes: number;
@@ -55,7 +45,7 @@ export async function createDirectUpload(params: {
   title?: string;
 }): Promise<DirectUploadResult> {
   const expiresAt = new Date(Date.now() + config.upload.signedUrlTtlSeconds * 1000);
-  const ext = extensionFromMime(params.mimeType ?? "video/mp4");
+  const ext = vodExtensionFromMime(params.mimeType ?? "video/mp4");
   const fileName = `upload-${Date.now()}.${ext}`;
   const title = params.title ?? fileName;
 

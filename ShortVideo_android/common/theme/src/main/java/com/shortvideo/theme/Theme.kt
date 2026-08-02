@@ -1,14 +1,17 @@
 package com.shortvideo.theme
 
+import android.app.Activity
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
-/**
- * App chrome is always dark (black background + light foreground).
- * "Light" mode only lifts surfaces slightly; it never switches to a white shell.
- */
+/** Night: black shell + light foreground. */
 private val NightColors = darkColorScheme(
     primary = PrimaryColor,
     onPrimary = Color.White,
@@ -25,19 +28,20 @@ private val NightColors = darkColorScheme(
     onError = Color.White,
 )
 
-private val LightColors = darkColorScheme(
+/** Light: white shell + dark foreground. */
+private val LightColors = lightColorScheme(
     primary = PrimaryColor,
     onPrimary = Color.White,
     secondary = PrimaryColor,
     onSecondary = Color.White,
-    background = Color(0xFF0A0A0A),
-    onBackground = White,
-    surface = SurfaceElevated,
-    onSurface = White,
-    surfaceVariant = Color(0xFF1E1E1E),
-    onSurfaceVariant = SubTextColor,
-    outline = Color(0xFF4A4A4A),
-    error = Color(0xFFFF5252),
+    background = White,
+    onBackground = Black,
+    surface = White,
+    onSurface = Black,
+    surfaceVariant = Color(0xFFF2F2F2),
+    onSurfaceVariant = Color(0xFF6B6B6B),
+    outline = Color(0xFFD0D0D0),
+    error = Color(0xFFB00020),
     onError = Color.White,
 )
 
@@ -46,8 +50,20 @@ fun ShortVideoTheme(
     darkTheme: Boolean = true,
     content: @Composable () -> Unit,
 ) {
+    val colorScheme = if (darkTheme) NightColors else LightColors
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as? Activity)?.window ?: return@SideEffect
+            window.navigationBarColor = colorScheme.surface.toArgb()
+            WindowCompat.getInsetsController(window, view).apply {
+                isAppearanceLightStatusBars = !darkTheme
+                isAppearanceLightNavigationBars = !darkTheme
+            }
+        }
+    }
     MaterialTheme(
-        colorScheme = if (darkTheme) NightColors else LightColors,
+        colorScheme = colorScheme,
         content = content,
     )
 }

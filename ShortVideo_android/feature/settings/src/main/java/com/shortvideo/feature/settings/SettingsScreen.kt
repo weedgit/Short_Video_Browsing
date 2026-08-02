@@ -211,7 +211,7 @@ fun SettingsScreen(
 
         Text(text = "Appearance", style = MaterialTheme.typography.titleMedium)
         Text(
-            text = "Black background with light text. Night is pure black; Light uses slightly elevated surfaces.",
+            text = "Night uses a black background. Light uses a white background.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

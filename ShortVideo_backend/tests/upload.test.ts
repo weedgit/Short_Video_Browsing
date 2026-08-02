@@ -183,6 +183,34 @@ describeUpload("Upload endpoints", () => {
     expect(video?.status).toBe("READY");
   });
 
+  it("rejects MIME types outside Alibaba VOD video formats", async () => {
+    const app = await appPromise;
+    const response = await request(app)
+      .post("/v1/uploads")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({
+        mimeType: "video/x-unknown-codec",
+        fileSizeBytes: 5_000_000,
+        durationMs: 15_000,
+      });
+
+    expect(response.status).toBe(400);
+  });
+
+  it("accepts Alibaba VOD MPEG containers such as VOB", async () => {
+    const app = await appPromise;
+    const response = await request(app)
+      .post("/v1/uploads")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({
+        mimeType: "video/dvd",
+        fileSizeBytes: 5_000_000,
+        durationMs: 15_000,
+      });
+
+    expect(response.status).toBe(201);
+  });
+
   it("handles duplicate webhook events idempotently (TEST-013)", async () => {
     const app = await appPromise;
     const payload = {

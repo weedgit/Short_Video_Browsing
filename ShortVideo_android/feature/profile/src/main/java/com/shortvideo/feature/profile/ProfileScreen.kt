@@ -59,7 +59,6 @@ import com.shortvideo.composable.util.formatDuration
 import com.shortvideo.domain.model.ProfileVideoItem
 import com.shortvideo.domain.model.UserProfile
 import com.shortvideo.theme.PrimaryColor
-import com.shortvideo.theme.SubTextColor
 
 @Composable
 fun ProfileScreen(
@@ -145,7 +144,7 @@ private fun ProfileContent(
         verticalArrangement = Arrangement.spacedBy(1.dp),
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black),
+            .background(MaterialTheme.colorScheme.background),
     ) {
         item(span = { GridItemSpan(maxLineSpan) }) {
             ProfileHeader(
@@ -166,7 +165,7 @@ private fun ProfileContent(
             }
         } else {
             item(span = { GridItemSpan(maxLineSpan) }) {
-                HorizontalDivider(color = Color(0xFF2A2A2A), thickness = 0.5.dp)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
             }
         }
 
@@ -180,7 +179,7 @@ private fun ProfileContent(
                 ) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(28.dp),
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.primary,
                         strokeWidth = 2.dp,
                     )
                 }
@@ -213,7 +212,7 @@ private fun ProfileHeader(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.Black)
+            .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 16.dp)
             .padding(top = 8.dp, bottom = 12.dp),
     ) {
@@ -226,12 +225,12 @@ private fun ProfileHeader(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.onSurface,
                     )
                 }
                 Text(
                     text = "@${profile.username}",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -252,8 +251,8 @@ private fun ProfileHeader(
                 modifier = Modifier
                     .size(112.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF2A2A2A))
-                    .border(1.dp, Color(0xFF3A3A3A), CircleShape),
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
             )
 
             Spacer(modifier = Modifier.width(20.dp))
@@ -270,7 +269,7 @@ private fun ProfileHeader(
                     ) {
                         Text(
                             text = profile.displayName,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
                             maxLines = 1,
@@ -279,7 +278,7 @@ private fun ProfileHeader(
                         )
                         Text(
                             text = "@${profile.username}",
-                            color = SubTextColor,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodyMedium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -297,7 +296,7 @@ private fun ProfileHeader(
                             Icon(
                                 Icons.Default.Settings,
                                 contentDescription = "Settings",
-                                tint = Color.White,
+                                tint = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.size(20.dp),
                             )
                         }
@@ -320,7 +319,7 @@ private fun ProfileHeader(
         if (!profile.bio.isNullOrBlank()) {
             Text(
                 text = profile.bio!!,
-                color = SubTextColor,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
                 modifier = Modifier
@@ -336,7 +335,11 @@ private fun ProfileHeader(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(4.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (profile.isFollowing) Color(0xFF2A2A2A) else PrimaryColor,
+                    containerColor = if (profile.isFollowing) {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    } else {
+                        PrimaryColor
+                    },
                 ),
             ) {
                 Text(
@@ -356,14 +359,14 @@ private fun ProfileStat(
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = formatCount(value),
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Bold,
             fontSize = 17.sp,
             textAlign = TextAlign.Center,
         )
         Text(
             text = label,
-            color = SubTextColor,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.labelMedium,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 2.dp),
@@ -380,7 +383,7 @@ private fun ProfileTabRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.Black)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(top = 4.dp),
         ) {
             ProfileTabItem(
@@ -405,7 +408,7 @@ private fun ProfileTabRow(
                 onClick = { onSelectTab(ProfileTab.LIKED) },
             )
         }
-        HorizontalDivider(color = Color(0xFF2A2A2A), thickness = 0.5.dp)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
     }
 }
 
@@ -417,7 +420,11 @@ private fun ProfileTabItem(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    val tint = if (selected) Color.White else SubTextColor
+    val tint = if (selected) {
+        MaterialTheme.colorScheme.onSurface
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
     Column(
         modifier = modifier
             .clickable(onClick = onClick)
@@ -435,7 +442,9 @@ private fun ProfileTabItem(
             modifier = Modifier
                 .height(2.dp)
                 .fillMaxWidth(0.45f)
-                .background(if (selected) Color.White else Color.Transparent),
+                .background(
+                    if (selected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
+                ),
         )
     }
 }
@@ -528,14 +537,14 @@ private fun ProfileEmptyTab(selectedTab: ProfileTab) {
     ) {
         Text(
             text = title,
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = subtitle,
-            color = SubTextColor,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
         )

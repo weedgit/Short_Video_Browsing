@@ -12,12 +12,49 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Accepts any video MIME type (and common extensions such as AVI/MKV).
- * Size and duration limits still apply when duration can be read.
+ * Accepts Alibaba ApsaraVideo VOD supported video containers only.
+ * @see https://www.alibabacloud.com/help/en/vod/product-overview/audio-and-video-upload
  */
 private const val MAX_FILE_SIZE_BYTES = 1_073_741_824L
 private const val MAX_DURATION_MS = 600_000L
 private const val STREAM_BUFFER_SIZE = 8192
+
+private val ALIBABA_VOD_VIDEO_EXTENSIONS = setOf(
+    "3gp", "asf", "avi", "dat", "dv", "f4v", "flv",
+    "m2t", "m4v", "mj2", "mjpeg", "mkv", "mov", "mp4",
+    "mpe", "mpeg", "mpg", "mts", "ogg", "ogv", "qt",
+    "rm", "rmvb", "ts", "vob", "webm", "wmv",
+)
+
+private val ALIBABA_VOD_VIDEO_MIME_TYPES = setOf(
+    "video/mp4",
+    "video/quicktime",
+    "video/webm",
+    "video/x-msvideo",
+    "video/avi",
+    "video/msvideo",
+    "video/x-matroska",
+    "video/mpeg",
+    "video/mpg",
+    "video/3gpp",
+    "video/3gpp2",
+    "video/x-flv",
+    "video/flv",
+    "video/x-f4v",
+    "video/x-ms-wmv",
+    "video/x-ms-asf",
+    "video/mp2t",
+    "video/ogg",
+    "video/dvd",
+    "video/x-ms-vob",
+    "video/x-dv",
+    "video/dv",
+    "video/x-pn-realvideo",
+    "application/vnd.rn-realmedia",
+    "application/vnd.rn-realmedia-vbr",
+)
+
+private const val FORMAT_HINT = "MP4, MOV, AVI, MKV, WEBM, FLV, 3GP, MPEG, TS, VOB, WMV"
 
 @Singleton
 class VideoFileInspector @Inject constructor(
@@ -29,12 +66,16 @@ class VideoFileInspector @Inject constructor(
         val displayName = queryDisplayName(resolver, uri)
         val mimeType = resolveMimeType(resolver, uri, displayName)
             ?: return Result.failure(
-                IllegalArgumentException("Unsupported file type. Please upload a video file."),
+                IllegalArgumentException(
+                    "Unsupported file type. Use an Alibaba VOD format ($FORMAT_HINT).",
+                ),
             )
 
-        if (!isVideoMimeType(mimeType)) {
+        if (!isAlibabaVodVideoMimeType(mimeType)) {
             return Result.failure(
-                IllegalArgumentException("Only video files are supported (e.g. MP4, MOV, AVI, WebM, MKV)."),
+                IllegalArgumentException(
+                    "Only Alibaba VOD video formats are supported ($FORMAT_HINT).",
+                ),
             )
         }
 
@@ -101,8 +142,8 @@ class VideoFileInspector @Inject constructor(
     }
 
     private fun normalizeMimeType(mimeType: String?, displayName: String?): String? {
-        if (mimeType != null && isVideoMimeType(mimeType)) {
-            return mimeType
+        if (mimeType != null && isAlibabaVodVideoMimeType(mimeType)) {
+            return mimeType.lowercase()
         }
 
         val extension = displayName
@@ -110,28 +151,36 @@ class VideoFileInspector @Inject constructor(
             ?.lowercase()
             ?.takeIf { it.isNotBlank() }
 
-        return mimeFromExtension(extension) ?: mimeType?.takeIf { isVideoMimeType(it) }
+        return mimeFromExtension(extension)
+            ?: mimeType?.takeIf { isAlibabaVodVideoMimeType(it) }?.lowercase()
     }
 
-    private fun mimeFromExtension(extension: String?): String? = when (extension) {
-        "mp4", "m4v" -> "video/mp4"
-        "mov", "qt" -> "video/quicktime"
-        "webm" -> "video/webm"
-        "avi" -> "video/x-msvideo"
-        "mkv" -> "video/x-matroska"
-        "mpeg", "mpg", "mpe" -> "video/mpeg"
-        "3gp", "3gpp" -> "video/3gpp"
-        "3g2" -> "video/3gpp2"
-        "flv" -> "video/x-flv"
-        "wmv" -> "video/x-ms-wmv"
-        "ts", "m2ts", "mts" -> "video/mp2t"
-        "ogv" -> "video/ogg"
-        "asf" -> "video/x-ms-asf"
-        else -> null
+    private fun mimeFromExtension(extension: String?): String? {
+        if (extension.isNullOrBlank() || extension !in ALIBABA_VOD_VIDEO_EXTENSIONS) {
+            return null
+        }
+        return when (extension) {
+            "mp4", "m4v" -> "video/mp4"
+            "mov", "qt" -> "video/quicktime"
+            "webm" -> "video/webm"
+            "avi" -> "video/x-msvideo"
+            "mkv" -> "video/x-matroska"
+            "mpeg", "mpg", "mpe", "dat", "mjpeg", "mj2" -> "video/mpeg"
+            "vob" -> "video/dvd"
+            "3gp" -> "video/3gpp"
+            "flv", "f4v" -> "video/x-flv"
+            "wmv" -> "video/x-ms-wmv"
+            "asf" -> "video/x-ms-asf"
+            "ts", "m2t", "mts" -> "video/mp2t"
+            "ogg", "ogv" -> "video/ogg"
+            "rm", "rmvb" -> "application/vnd.rn-realmedia"
+            "dv" -> "video/x-dv"
+            else -> null
+        }
     }
 
-    private fun isVideoMimeType(mimeType: String): Boolean =
-        mimeType.startsWith("video/", ignoreCase = true)
+    private fun isAlibabaVodVideoMimeType(mimeType: String): Boolean =
+        mimeType.lowercase() in ALIBABA_VOD_VIDEO_MIME_TYPES
 
     private fun isGenericBinaryType(mimeType: String): Boolean =
         mimeType == "application/octet-stream" || mimeType == "binary/octet-stream"
