@@ -2,7 +2,6 @@ package com.shortvideo.app.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -34,7 +33,6 @@ fun AppNavHost(
     }
 }
 
-@OptIn(UnstableApi::class)
 private fun NavGraphBuilder.registerFeatureGraphs(
     navController: NavHostController,
     onAuthCompleted: (returnRoute: String?) -> Unit,

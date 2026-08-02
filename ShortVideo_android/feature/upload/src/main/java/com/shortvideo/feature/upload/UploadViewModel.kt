@@ -15,6 +15,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import android.content.Context
 import javax.inject.Inject
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -68,6 +69,7 @@ internal val SUGGESTED_HASHTAGS = listOf(
     "#diy",
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class UploadViewModel @Inject constructor(
     private val uploadRepository: UploadRepository,

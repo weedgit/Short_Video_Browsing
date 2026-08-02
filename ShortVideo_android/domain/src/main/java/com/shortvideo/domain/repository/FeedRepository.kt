@@ -28,6 +28,7 @@ interface SocialRepository {
     suspend fun saveVideo(videoId: String): Boolean
     suspend fun unsaveVideo(videoId: String): Boolean
     suspend fun reportVideo(videoId: String, title: String, content: String)
+    suspend fun reportComment(commentId: String, reason: String)
 }
 
 interface ProfileRepository {

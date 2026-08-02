@@ -154,6 +154,16 @@ class SocialRepositoryImpl @Inject constructor(
             ),
         )
     }
+
+    override suspend fun reportComment(commentId: String, reason: String) {
+        socialApi.createReport(
+            CreateReportRequestDto(
+                targetType = "COMMENT",
+                targetId = commentId,
+                reason = reason,
+            ),
+        )
+    }
 }
 
 @Singleton
