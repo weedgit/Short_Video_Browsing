@@ -26,8 +26,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PersonAddAlt
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
@@ -182,43 +180,22 @@ private fun ProfileHeader(
             .padding(horizontal = 16.dp)
             .padding(top = 8.dp, bottom = 12.dp),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "@${profile.username}",
-                color = Color.White,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-            Row {
-                if (profile.isSelf) {
-                    IconButton(onClick = onSettings) {
-                        Icon(
-                            Icons.Default.Settings,
-                            contentDescription = "Settings",
-                            tint = Color.White,
-                        )
-                    }
-                }
+        if (profile.isSelf) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+            ) {
                 IconButton(onClick = onSettings) {
                     Icon(
-                        Icons.Default.Menu,
-                        contentDescription = "Menu",
+                        Icons.Default.Settings,
+                        contentDescription = "Settings",
                         tint = Color.White,
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // TikTok-style: avatar on the left, personal info on the right
+        // Avatar left; display name → username → stats on the right
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -236,47 +213,51 @@ private fun ProfileHeader(
 
             Spacer(modifier = Modifier.width(20.dp))
 
-            Row(
+            Column(
                 modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.SpaceEvenly,
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                ProfileStat(value = profile.followingCount, label = "Following")
-                ProfileStat(value = profile.followerCount, label = "Followers")
-                ProfileStat(value = profile.likeCount, label = "Likes")
+                Text(
+                    text = profile.displayName,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                )
+                Text(
+                    text = "@${profile.username}",
+                    color = SubTextColor,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                ) {
+                    ProfileStat(value = profile.followingCount, label = "Following")
+                    ProfileStat(value = profile.followerCount, label = "Followers")
+                    ProfileStat(value = profile.likeCount, label = "Likes")
+                }
             }
         }
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        Text(
-            text = profile.displayName,
-            color = Color.White,
-            fontWeight = FontWeight.Bold,
-            fontSize = 16.sp,
-        )
 
         if (!profile.bio.isNullOrBlank()) {
             Text(
                 text = profile.bio!!,
                 color = Color.White.copy(alpha = 0.88f),
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 6.dp),
+                modifier = Modifier.padding(top = 14.dp),
             )
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
-
-        if (profile.isSelf) {
-            OutlinedButton(
-                onClick = onSettings,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(4.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF3A3A3A)),
-            ) {
-                Text("Edit profile", fontWeight = FontWeight.SemiBold)
-            }
-        } else {
+        if (!profile.isSelf) {
+            Spacer(modifier = Modifier.height(14.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -352,7 +333,6 @@ private fun ProfileTabRow(
                 label = "Videos",
                 icon = Icons.Default.GridView,
                 selected = selectedTab == ProfileTab.VIDEOS,
-                showLock = false,
                 modifier = Modifier.weight(1f),
                 onClick = { onSelectTab(ProfileTab.VIDEOS) },
             )
@@ -360,7 +340,6 @@ private fun ProfileTabRow(
                 label = "Favorites",
                 icon = Icons.Default.Bookmark,
                 selected = selectedTab == ProfileTab.FAVORITES,
-                showLock = true,
                 modifier = Modifier.weight(1f),
                 onClick = { onSelectTab(ProfileTab.FAVORITES) },
             )
@@ -368,7 +347,6 @@ private fun ProfileTabRow(
                 label = "Liked",
                 icon = Icons.Default.Favorite,
                 selected = selectedTab == ProfileTab.LIKED,
-                showLock = true,
                 modifier = Modifier.weight(1f),
                 onClick = { onSelectTab(ProfileTab.LIKED) },
             )
@@ -382,7 +360,6 @@ private fun ProfileTabItem(
     label: String,
     icon: ImageVector,
     selected: Boolean,
-    showLock: Boolean,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
@@ -393,25 +370,12 @@ private fun ProfileTabItem(
             .padding(top = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = tint,
-                modifier = Modifier.size(18.dp),
-            )
-            if (showLock) {
-                Icon(
-                    imageVector = Icons.Default.Lock,
-                    contentDescription = "Private",
-                    tint = tint,
-                    modifier = Modifier.size(11.dp),
-                )
-            }
-        }
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = tint,
+            modifier = Modifier.size(18.dp),
+        )
         Spacer(modifier = Modifier.height(8.dp))
         Box(
             modifier = Modifier

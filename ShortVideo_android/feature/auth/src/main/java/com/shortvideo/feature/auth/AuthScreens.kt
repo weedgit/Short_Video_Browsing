@@ -22,10 +22,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.shortvideo.composable.PasswordTextField
 
 @Composable
 fun LoginScreen(
@@ -64,14 +64,10 @@ fun LoginScreen(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             enabled = !uiState.isLoading,
         )
-        OutlinedTextField(
+        PasswordTextField(
             value = uiState.password,
             onValueChange = viewModel::onPasswordChanged,
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Password") },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            label = "Password",
             enabled = !uiState.isLoading,
         )
     }
@@ -127,14 +123,10 @@ fun RegisterScreen(
             singleLine = true,
             enabled = !uiState.isLoading,
         )
-        OutlinedTextField(
+        PasswordTextField(
             value = uiState.password,
             onValueChange = viewModel::onPasswordChanged,
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Password") },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            label = "Password",
             enabled = !uiState.isLoading,
         )
     }
