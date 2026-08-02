@@ -8,6 +8,7 @@ import com.shortvideo.data.repository.InboxRepositoryImpl
 import com.shortvideo.data.repository.PlaybackEventRepositoryImpl
 import com.shortvideo.data.repository.ProfileRepositoryImpl
 import com.shortvideo.data.repository.SocialRepositoryImpl
+import com.shortvideo.data.repository.ThemeRepositoryImpl
 import com.shortvideo.data.repository.UploadRepositoryImpl
 import com.shortvideo.domain.repository.AuthRepository
 import com.shortvideo.domain.repository.DiscoverRepository
@@ -17,6 +18,7 @@ import com.shortvideo.domain.repository.InboxRepository
 import com.shortvideo.domain.repository.PlaybackEventRepository
 import com.shortvideo.domain.repository.ProfileRepository
 import com.shortvideo.domain.repository.SocialRepository
+import com.shortvideo.domain.repository.ThemeRepository
 import com.shortvideo.domain.repository.UploadRepository
 import dagger.Binds
 import dagger.Module
@@ -66,4 +68,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindInboxRepository(impl: InboxRepositoryImpl): InboxRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindThemeRepository(impl: ThemeRepositoryImpl): ThemeRepository
 }

@@ -69,12 +69,6 @@ data class CreateCommentRequestDto(
     @SerializedName("parentId") val parentId: String? = null,
 )
 
-data class CreateReportRequestDto(
-    @SerializedName("targetType") val targetType: String,
-    @SerializedName("targetId") val targetId: String,
-    @SerializedName("reason") val reason: String,
-)
-
 data class LikeResponseDto(
     @SerializedName("liked") val liked: Boolean,
     @SerializedName("likeCount") val likeCount: Long,
@@ -103,20 +97,30 @@ data class UserProfileDto(
 data class ProfileVideoItemDto(
     @SerializedName("id") val id: String,
     @SerializedName("thumbnailUrl") val thumbnailUrl: String?,
-    @SerializedName("likeCount") val likeCount: Long = 0,
-    @SerializedName("durationMs") val durationMs: Long = 0,
+    @SerializedName("likeCount") val likeCount: Long,
+    @SerializedName("durationMs") val durationMs: Long,
     @SerializedName("streamUrl") val streamUrl: String? = null,
     @SerializedName("playbackFormat") val playbackFormat: String? = null,
+    @SerializedName("streamUrlExpiresAt") val streamUrlExpiresAt: String? = null,
+    @SerializedName("authorId") val authorId: String? = null,
+    @SerializedName("authorName") val authorName: String? = null,
+    @SerializedName("authorAvatarUrl") val authorAvatarUrl: String? = null,
     @SerializedName("description") val description: String? = null,
-    @SerializedName("category") val category: String? = null,
-    @SerializedName("commentCount") val commentCount: Long? = null,
-    @SerializedName("shareCount") val shareCount: Long? = null,
-    @SerializedName("musicLabel") val musicLabel: String? = null,
     @SerializedName("hashtags") val hashtags: List<String>? = null,
+    @SerializedName("category") val category: String? = null,
+    @SerializedName("uploadedAtLabel") val uploadedAtLabel: String? = null,
+    @SerializedName("commentCount") val commentCount: Long = 0,
+    @SerializedName("shareCount") val shareCount: Long = 0,
+    @SerializedName("isLiked") val isLiked: Boolean = false,
+    @SerializedName("isFollowing") val isFollowing: Boolean = false,
+    @SerializedName("isSaved") val isSaved: Boolean = false,
+    @SerializedName("musicLabel") val musicLabel: String? = null,
 )
 
 data class ProfileVideosDto(
     @SerializedName("items") val items: List<ProfileVideoItemDto>,
+    @SerializedName("nextCursor") val nextCursor: String? = null,
+    @SerializedName("hasMore") val hasMore: Boolean = false,
 )
 
 data class DiscoverHashtagDto(
@@ -150,6 +154,8 @@ data class InboxNotificationDto(
     @SerializedName("createdAtLabel") val createdAtLabel: String? = null,
     @SerializedName("videoId") val videoId: String? = null,
     @SerializedName("actorUserId") val actorUserId: String? = null,
+    @SerializedName("actorName") val actorName: String? = null,
+    @SerializedName("actorAvatarUrl") val actorAvatarUrl: String? = null,
 )
 
 data class InboxListDto(
@@ -167,4 +173,10 @@ data class UpdateProfileRequestDto(
     @SerializedName("displayName") val displayName: String? = null,
     @SerializedName("bio") val bio: String? = null,
     @SerializedName("avatarUrl") val avatarUrl: String? = null,
+)
+
+data class CreateReportRequestDto(
+    @SerializedName("targetType") val targetType: String,
+    @SerializedName("targetId") val targetId: String,
+    @SerializedName("reason") val reason: String,
 )

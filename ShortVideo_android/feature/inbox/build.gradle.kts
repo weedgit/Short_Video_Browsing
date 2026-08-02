@@ -39,4 +39,5 @@ dependencies {
     implementation(project(":common:composable"))
     baseDependencies()
     composeDependencies()
+    coilDependencies()
 }

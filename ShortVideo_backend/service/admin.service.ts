@@ -1,32 +1,47 @@
 import { AppError } from "../middleware/errorHandler";
 import {
+  countAnnouncements,
+  countReports,
+  countUserFollowers,
+  countUserFollowing,
+  countUserVideos,
+  countUsers,
+  countVideos,
   createAnnouncement as createAnnouncementRepo,
   deleteAnnouncement as deleteAnnouncementRepo,
   deleteAnnouncementInboxCopies,
   fanOutAnnouncementToInbox,
+  findAdminUserById,
+  findAdminVideoById,
   findAnnouncementById,
-  findAnnouncements,
+  findAnnouncementsPage,
   findReportsPage,
   findUsersPage,
   findVideosPage,
+  getAnalyticsDailySeries,
+  getAnalyticsPeriodTotals,
   getAnalyticsSnapshot,
+  sumUserVideoLikes,
   updateAnnouncement as updateAnnouncementRepo,
   updateAnnouncementInboxCopies,
   updateReportStatus as updateReportStatusRepo,
   updateUserAdminFields,
   updateVideoStatus as updateVideoStatusRepo,
 } from "../db/repositories/admin.repository";
-import { resolveThumbnailUrl } from "../integrations/cloudflare";
+import { resolveSignedPlaybackUrl, resolveThumbnailUrl } from "../integrations/cloudflare";
 import type {
   AdminAnalytics,
   AdminAnnouncement,
+  AdminAnnouncementsPage,
   AdminReportsPage,
+  AdminUserProfile,
   AdminUserSummary,
   AdminUsersPage,
+  AdminVideoSummary,
   AdminVideosPage,
 } from "../models/admin.types";
-import { decodeFeedCursor, encodeFeedCursor } from "../utils/feedCursor";
 import type {
+  AdminAnnouncementsQueryInput,
   AdminCreateAnnouncementInput,
   AdminReportsQueryInput,
   AdminUpdateAnnouncementInput,
@@ -37,37 +52,39 @@ import type {
   AdminVideosQueryInput,
 } from "../validators/admin.schema";
 
-function decodeCursorSafe(cursor?: string): { createdAt: Date; id: string } | undefined {
-  if (!cursor) return undefined;
-  try {
-    const payload = decodeFeedCursor(cursor);
-    return { createdAt: new Date(payload.createdAt), id: payload.id };
-  } catch {
-    throw new AppError(400, "INVALID_CURSOR", "Invalid pagination cursor.");
-  }
+function pageMeta(total: number, page: number, limit: number) {
+  const totalPages = Math.max(1, Math.ceil(total / limit) || 1);
+  const safePage = Math.min(page, totalPages);
+  return {
+    page: safePage,
+    limit,
+    total,
+    totalPages,
+    hasMore: safePage < totalPages,
+  };
 }
 
 export async function listUsers(query: AdminUsersQueryInput): Promise<AdminUsersPage> {
-  const cursor = decodeCursorSafe(query.cursor);
-  const rows = await findUsersPage({ limit: query.limit + 1, cursor });
-  const hasMore = rows.length > query.limit;
-  const page = hasMore ? rows.slice(0, query.limit) : rows;
+  const filter = { q: query.q, role: query.role, status: query.status };
+  const skip = (query.page - 1) * query.limit;
+  const [rows, total] = await Promise.all([
+    findUsersPage({ ...filter, limit: query.limit, skip }),
+    countUsers(filter),
+  ]);
 
-  const items: AdminUserSummary[] = page.map((user) => ({
+  const items: AdminUserSummary[] = rows.map((user) => ({
     id: user.id,
     email: user.email,
     username: user.username,
     displayName: user.displayName,
+    avatarUrl: user.avatarUrl,
+    bio: user.bio,
     role: user.role,
     status: user.status,
     createdAt: user.createdAt.toISOString(),
   }));
 
-  const last = page.at(-1);
-  const nextCursor =
-    hasMore && last ? encodeFeedCursor({ createdAt: last.createdAt.toISOString(), id: last.id }) : null;
-
-  return { items, nextCursor, hasMore };
+  return { items, ...pageMeta(total, query.page, query.limit) };
 }
 
 export async function updateUser(userId: string, input: AdminUpdateUserInput): Promise<AdminUserSummary> {
@@ -78,34 +95,125 @@ export async function updateUser(userId: string, input: AdminUpdateUserInput): P
     email: user.email,
     username: user.username,
     displayName: user.displayName,
+    avatarUrl: user.avatarUrl,
+    bio: user.bio,
     role: user.role,
     status: user.status,
     createdAt: user.createdAt.toISOString(),
   };
 }
 
-export async function listVideos(query: AdminVideosQueryInput): Promise<AdminVideosPage> {
-  const cursor = decodeCursorSafe(query.cursor);
-  const rows = await findVideosPage({ status: query.status, limit: query.limit + 1, cursor });
-  const hasMore = rows.length > query.limit;
-  const page = hasMore ? rows.slice(0, query.limit) : rows;
+function mapAdminVideo(video: {
+  id: string;
+  userId: string;
+  description: string;
+  status: string;
+  durationMs: number;
+  category: string | null;
+  likeCount: number;
+  commentCount: number;
+  shareCount: number;
+  musicLabel: string | null;
+  createdAt: Date;
+  cloudflareAssetId: string | null;
+  hlsUrl: string | null;
+  streamUrl: string | null;
+  thumbnailUrl: string | null;
+  user: {
+    displayName: string;
+    username: string;
+    avatarUrl: string | null;
+  };
+  hashtags: Array<{ tag: string }>;
+}): AdminVideoSummary {
+  let streamUrl: string | null = null;
+  let playbackFormat: "hls" | "mp4" | null = null;
+  try {
+    const signed = resolveSignedPlaybackUrl({
+      cloudflareAssetId: video.cloudflareAssetId,
+      hlsUrl: video.hlsUrl,
+      streamUrl: video.streamUrl,
+    });
+    streamUrl = signed.url;
+    playbackFormat = signed.format;
+  } catch {
+    // Keep null when playback URL cannot be resolved.
+  }
 
-  const items = page.map((video) => ({
+  return {
     id: video.id,
     userId: video.userId,
     authorName: video.user.displayName,
+    authorUsername: video.user.username,
+    authorAvatarUrl: video.user.avatarUrl,
     description: video.description,
     status: video.status,
     thumbnailUrl: resolveThumbnailUrl(video),
+    streamUrl,
+    playbackFormat,
     likeCount: video.likeCount,
+    commentCount: video.commentCount,
+    shareCount: video.shareCount,
+    durationMs: video.durationMs,
+    category: video.category,
+    hashtags: video.hashtags.map((row) => row.tag),
+    musicLabel: video.musicLabel,
     createdAt: video.createdAt.toISOString(),
-  }));
+  };
+}
 
-  const last = page.at(-1);
-  const nextCursor =
-    hasMore && last ? encodeFeedCursor({ createdAt: last.createdAt.toISOString(), id: last.id }) : null;
+export async function listVideos(query: AdminVideosQueryInput): Promise<AdminVideosPage> {
+  const filter = {
+    status: query.status,
+    q: query.q,
+    hashtag: query.hashtag,
+    category: query.category,
+  };
+  const skip = (query.page - 1) * query.limit;
+  const [rows, total] = await Promise.all([
+    findVideosPage({ ...filter, limit: query.limit, skip }),
+    countVideos(filter),
+  ]);
+  const items = rows.map(mapAdminVideo);
+  return { items, ...pageMeta(total, query.page, query.limit) };
+}
 
-  return { items, nextCursor, hasMore };
+export async function getVideo(videoId: string): Promise<AdminVideoSummary> {
+  const video = await findAdminVideoById(videoId);
+  if (!video) {
+    throw new AppError(404, "VIDEO_NOT_FOUND", "Video not found.");
+  }
+  return mapAdminVideo(video);
+}
+
+export async function getUserProfile(userId: string): Promise<AdminUserProfile> {
+  const user = await findAdminUserById(userId);
+  if (!user) {
+    throw new AppError(404, "USER_NOT_FOUND", "User not found.");
+  }
+
+  const [followerCount, followingCount, videoCount, likeCount] = await Promise.all([
+    countUserFollowers(userId),
+    countUserFollowing(userId),
+    countUserVideos(userId),
+    sumUserVideoLikes(userId),
+  ]);
+
+  return {
+    id: user.id,
+    email: user.email,
+    username: user.username,
+    displayName: user.displayName,
+    avatarUrl: user.avatarUrl,
+    bio: user.bio,
+    role: user.role,
+    status: user.status,
+    createdAt: user.createdAt.toISOString(),
+    followerCount,
+    followingCount,
+    videoCount,
+    likeCount,
+  };
 }
 
 export async function updateVideoStatus(videoId: string, input: AdminUpdateVideoInput) {
@@ -113,29 +221,55 @@ export async function updateVideoStatus(videoId: string, input: AdminUpdateVideo
   return { id: video.id, status: video.status };
 }
 
+function parseReportReason(reason: string): { title: string; message: string } {
+  const trimmed = reason.trim();
+  if (!trimmed) return { title: "(no title)", message: "" };
+
+  const doubleBreak = trimmed.split(/\n\n+/);
+  if (doubleBreak.length >= 2) {
+    return {
+      title: doubleBreak[0]!.trim() || "(no title)",
+      message: doubleBreak.slice(1).join("\n\n").trim(),
+    };
+  }
+
+  const lines = trimmed.split("\n");
+  if (lines.length >= 2) {
+    return {
+      title: lines[0]!.trim() || "(no title)",
+      message: lines.slice(1).join("\n").trim(),
+    };
+  }
+
+  return { title: trimmed, message: "" };
+}
+
 export async function listReports(query: AdminReportsQueryInput): Promise<AdminReportsPage> {
-  const cursor = decodeCursorSafe(query.cursor);
-  const rows = await findReportsPage({ status: query.status, limit: query.limit + 1, cursor });
-  const hasMore = rows.length > query.limit;
-  const page = hasMore ? rows.slice(0, query.limit) : rows;
+  const filter = { status: query.status, q: query.q };
+  const skip = (query.page - 1) * query.limit;
+  const [rows, total] = await Promise.all([
+    findReportsPage({ ...filter, limit: query.limit, skip }),
+    countReports(filter),
+  ]);
 
-  const items = page.map((report) => ({
-    id: report.id,
-    reporterId: report.reporterId,
-    reporterName: report.reporter.displayName,
-    targetType: report.targetType,
-    targetId: report.targetId,
-    reason: report.reason,
-    status: report.status,
-    createdAt: report.createdAt.toISOString(),
-    resolvedAt: report.resolvedAt ? report.resolvedAt.toISOString() : null,
-  }));
+  const items = rows.map((report) => {
+    const { title, message } = parseReportReason(report.reason);
+    return {
+      id: report.id,
+      reporterId: report.reporterId,
+      reporterName: report.reporter.displayName,
+      targetType: report.targetType,
+      targetId: report.targetId,
+      reason: report.reason,
+      title,
+      message,
+      status: report.status,
+      createdAt: report.createdAt.toISOString(),
+      resolvedAt: report.resolvedAt ? report.resolvedAt.toISOString() : null,
+    };
+  });
 
-  const last = page.at(-1);
-  const nextCursor =
-    hasMore && last ? encodeFeedCursor({ createdAt: last.createdAt.toISOString(), id: last.id }) : null;
-
-  return { items, nextCursor, hasMore };
+  return { items, ...pageMeta(total, query.page, query.limit) };
 }
 
 export async function updateReport(id: string, input: AdminUpdateReportInput) {
@@ -147,17 +281,20 @@ export async function updateReport(id: string, input: AdminUpdateReportInput) {
   };
 }
 
-export async function listAnnouncements(): Promise<AdminAnnouncement[]> {
-  const rows = await findAnnouncements(50);
-  return rows.map((announcement) => ({
-    id: announcement.id,
-    title: announcement.title,
-    body: announcement.body,
-    isActive: announcement.isActive,
-    publishedAt: announcement.publishedAt ? announcement.publishedAt.toISOString() : null,
-    createdAt: announcement.createdAt.toISOString(),
-    createdById: announcement.createdById,
-  }));
+export async function listAnnouncements(
+  query: AdminAnnouncementsQueryInput,
+): Promise<AdminAnnouncementsPage> {
+  const filter = {
+    q: query.q,
+    isActive: query.active === "true" ? true : query.active === "false" ? false : undefined,
+  };
+  const skip = (query.page - 1) * query.limit;
+  const [rows, total] = await Promise.all([
+    findAnnouncementsPage({ ...filter, limit: query.limit, skip }),
+    countAnnouncements(filter),
+  ]);
+  const items = rows.map(mapAnnouncement);
+  return { items, ...pageMeta(total, query.page, query.limit) };
 }
 
 function mapAnnouncement(announcement: {
@@ -277,6 +414,69 @@ export async function deleteAnnouncement(id: string): Promise<void> {
   await deleteAnnouncementRepo(id);
 }
 
-export async function getAnalytics(): Promise<AdminAnalytics> {
-  return getAnalyticsSnapshot();
+export async function getAnalytics(rangeDays = 7): Promise<AdminAnalytics> {
+  const days = rangeDays === 30 ? 30 : 7;
+  const currentStart = startOfUtcDay(daysAgoUtc(days - 1));
+  const nextDay = startOfUtcDay(daysAgoUtc(-1));
+  const previousStart = startOfUtcDay(daysAgoUtc(days * 2 - 1));
+  const previousEnd = currentStart;
+
+  const [snapshot, series, currentTotals, previousTotals] = await Promise.all([
+    getAnalyticsSnapshot(),
+    getAnalyticsDailySeries(days),
+    getAnalyticsPeriodTotals(currentStart, nextDay),
+    getAnalyticsPeriodTotals(previousStart, previousEnd),
+  ]);
+
+  return {
+    ...snapshot,
+    rangeDays: days,
+    series,
+    trends: {
+      users: buildTrend(currentTotals.users, previousTotals.users),
+      videos: buildTrend(currentTotals.videos, previousTotals.videos),
+      likes: buildTrend(currentTotals.likes, previousTotals.likes),
+      comments: buildTrend(currentTotals.comments, previousTotals.comments),
+      reports: buildTrend(currentTotals.reports, previousTotals.reports),
+    },
+  };
+}
+
+function buildTrend(currentPeriodTotal: number, previousPeriodTotal: number) {
+  let changePercent: number | null = null;
+  if (previousPeriodTotal > 0) {
+    changePercent =
+      Math.round(((currentPeriodTotal - previousPeriodTotal) / previousPeriodTotal) * 1000) / 10;
+  } else if (currentPeriodTotal > 0) {
+    changePercent = 100;
+  } else {
+    changePercent = 0;
+  }
+
+  const direction =
+    currentPeriodTotal > previousPeriodTotal
+      ? ("up" as const)
+      : currentPeriodTotal < previousPeriodTotal
+        ? ("down" as const)
+        : ("flat" as const);
+
+  return {
+    currentPeriodTotal,
+    previousPeriodTotal,
+    changePercent,
+    direction,
+  };
+}
+
+function daysAgoUtc(days: number): Date {
+  const d = new Date();
+  d.setUTCHours(0, 0, 0, 0);
+  d.setUTCDate(d.getUTCDate() - days);
+  return d;
+}
+
+function startOfUtcDay(date: Date): Date {
+  const d = new Date(date);
+  d.setUTCHours(0, 0, 0, 0);
+  return d;
 }

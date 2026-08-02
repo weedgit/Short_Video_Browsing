@@ -111,6 +111,32 @@ fun ProfileVideoItemDto.toDomain(): ProfileVideoItem =
         hashtags = hashtags.orEmpty(),
     )
 
+fun ProfileVideoItemDto.toFeedVideo(): FeedVideo? {
+    val url = streamUrl ?: return null
+    return FeedVideo(
+        id = id,
+        streamUrl = url,
+        authorName = authorName.orEmpty().ifBlank { "creator" },
+        description = description.orEmpty(),
+        hashtags = hashtags.orEmpty(),
+        category = category,
+        uploadedAtLabel = uploadedAtLabel.orEmpty(),
+        durationMs = durationMs,
+        playbackFormat = playbackFormat ?: "mp4",
+        streamUrlExpiresAt = streamUrlExpiresAt,
+        thumbnailUrl = thumbnailUrl,
+        authorId = authorId,
+        authorAvatarUrl = authorAvatarUrl,
+        likeCount = likeCount,
+        commentCount = commentCount,
+        shareCount = shareCount,
+        isLiked = isLiked,
+        isFollowing = isFollowing,
+        isSaved = isSaved,
+        musicLabel = musicLabel,
+    )
+}
+
 fun DiscoverHashtagDto.toDomain(): DiscoverHashtag =
     DiscoverHashtag(tag = tag, videoCount = videoCount)
 
@@ -136,6 +162,8 @@ fun InboxNotificationDto.toDomain(): InboxNotification =
             ?: formatRelativeTime(createdAt),
         videoId = videoId,
         actorUserId = actorUserId,
+        actorName = actorName,
+        actorAvatarUrl = actorAvatarUrl,
     )
 
 fun List<FeedVideo>.toMockPage(): FeedPage =

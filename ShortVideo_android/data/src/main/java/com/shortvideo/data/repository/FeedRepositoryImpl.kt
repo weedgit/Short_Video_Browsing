@@ -1,6 +1,7 @@
 package com.shortvideo.data.repository
 
 import com.shortvideo.data.mapper.toDomain
+import com.shortvideo.data.mapper.toFeedVideo
 import com.shortvideo.data.mapper.toMockPage
 import com.shortvideo.data.remote.DiscoverApi
 import com.shortvideo.data.remote.FeedApi
@@ -16,6 +17,7 @@ import com.shortvideo.data.remote.dto.UpdateProfileRequestDto
 import com.shortvideo.data.source.MockFeedDataSource
 import com.shortvideo.domain.model.DiscoverTab
 import com.shortvideo.domain.model.FeedPage
+import com.shortvideo.domain.model.FeedVideo
 import com.shortvideo.domain.model.InboxNotification
 import com.shortvideo.domain.model.PlaybackEvent
 import com.shortvideo.domain.model.ProfileVideoItem
@@ -143,12 +145,12 @@ class SocialRepositoryImpl @Inject constructor(
     override suspend fun unsaveVideo(videoId: String): Boolean =
         socialApi.unsaveVideo(videoId).data?.get("saved") ?: false
 
-    override suspend fun reportComment(commentId: String, reason: String) {
-        socialApi.submitReport(
+    override suspend fun reportVideo(videoId: String, title: String, content: String) {
+        socialApi.createReport(
             CreateReportRequestDto(
-                targetType = "COMMENT",
-                targetId = commentId,
-                reason = reason,
+                targetType = "VIDEO",
+                targetId = videoId,
+                reason = "$title\n\n$content",
             ),
         )
     }
@@ -167,11 +169,26 @@ class ProfileRepositoryImpl @Inject constructor(
     override suspend fun getProfileVideos(userId: String): List<ProfileVideoItem> =
         profileApi.getProfileVideos(userId).data?.items?.map { it.toDomain() }.orEmpty()
 
+    override suspend fun getProfileFeedVideos(userId: String, limit: Int): List<FeedVideo> =
+        profileApi.getProfileVideos(userId, limit = limit).data?.items
+            ?.mapNotNull { it.toFeedVideo() }
+            .orEmpty()
+
     override suspend fun getMyLikedVideos(): List<ProfileVideoItem> =
         profileApi.getMyLikedVideos().data?.items?.map { it.toDomain() }.orEmpty()
 
+    override suspend fun getMyLikedFeedVideos(limit: Int): List<FeedVideo> =
+        profileApi.getMyLikedVideos(limit = limit).data?.items
+            ?.mapNotNull { it.toFeedVideo() }
+            .orEmpty()
+
     override suspend fun getMySavedVideos(): List<ProfileVideoItem> =
         profileApi.getMySavedVideos().data?.items?.map { it.toDomain() }.orEmpty()
+
+    override suspend fun getMySavedFeedVideos(limit: Int): List<FeedVideo> =
+        profileApi.getMySavedVideos(limit = limit).data?.items
+            ?.mapNotNull { it.toFeedVideo() }
+            .orEmpty()
 
     override suspend fun updateMyProfile(displayName: String?, bio: String?): UserProfile =
         profileApi.updateMyProfile(
@@ -211,8 +228,12 @@ class InboxRepositoryImpl @Inject constructor(
     private val inboxApi: InboxApi,
 ) : InboxRepository {
     override suspend fun getNotifications(): Pair<List<InboxNotification>, Int> {
-        val data = inboxApi.getInbox().data
-        return (data?.items?.map { it.toDomain() }.orEmpty()) to (data?.unreadCount ?: 0)
+        return try {
+            val data = inboxApi.getInbox().data
+            (data?.items?.map { it.toDomain() }.orEmpty()) to (data?.unreadCount ?: 0)
+        } catch (_: Exception) {
+            emptyList<InboxNotification>() to 0
+        }
     }
 
     override suspend fun markRead(id: String) {

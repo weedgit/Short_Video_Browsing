@@ -16,7 +16,7 @@ data class InboxUiState(
     val isLoading: Boolean = true,
     val notifications: List<InboxNotification> = emptyList(),
     val unreadCount: Int = 0,
-    val errorMessage: String? = null,
+    val selectedMessage: InboxNotification? = null,
 )
 
 @HiltViewModel
@@ -32,38 +32,55 @@ class InboxViewModel @Inject constructor(
 
     fun refresh() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            _uiState.update { it.copy(isLoading = true) }
             runCatching { inboxRepository.getNotifications() }
                 .onSuccess { (items, unread) ->
-                    _uiState.update {
-                        it.copy(
+                    _uiState.update { state ->
+                        val selectedId = state.selectedMessage?.id
+                        state.copy(
                             isLoading = false,
                             notifications = items,
                             unreadCount = unread,
-                            errorMessage = null,
+                            selectedMessage = selectedId?.let { id ->
+                                items.firstOrNull { it.id == id }
+                            },
                         )
                     }
                 }
-                .onFailure { error ->
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = error.message ?: "Unable to load inbox",
-                        )
-                    }
+                .onFailure {
+                    _uiState.update { it.copy(isLoading = false) }
                 }
         }
+    }
+
+    fun openMessage(item: InboxNotification) {
+        _uiState.update { it.copy(selectedMessage = item) }
+        if (!item.isRead) {
+            markRead(item.id)
+        }
+    }
+
+    fun closeMessage() {
+        _uiState.update { it.copy(selectedMessage = null) }
     }
 
     fun markRead(id: String) {
         viewModelScope.launch {
             inboxRepository.markRead(id)
             _uiState.update { state ->
+                val alreadyRead = state.notifications.any { it.id == id && it.isRead }
                 state.copy(
                     notifications = state.notifications.map {
                         if (it.id == id) it.copy(isRead = true) else it
                     },
-                    unreadCount = (state.unreadCount - 1).coerceAtLeast(0),
+                    selectedMessage = state.selectedMessage?.let { selected ->
+                        if (selected.id == id) selected.copy(isRead = true) else selected
+                    },
+                    unreadCount = if (alreadyRead) {
+                        state.unreadCount
+                    } else {
+                        (state.unreadCount - 1).coerceAtLeast(0)
+                    },
                 )
             }
         }
@@ -75,6 +92,7 @@ class InboxViewModel @Inject constructor(
             _uiState.update { state ->
                 state.copy(
                     notifications = state.notifications.map { it.copy(isRead = true) },
+                    selectedMessage = state.selectedMessage?.copy(isRead = true),
                     unreadCount = 0,
                 )
             }

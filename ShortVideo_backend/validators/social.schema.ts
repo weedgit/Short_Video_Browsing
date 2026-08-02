@@ -35,7 +35,7 @@ export const registerFcmTokenSchema = z.object({
 export const createReportSchema = z.object({
   targetType: z.enum(["VIDEO", "USER", "COMMENT"]),
   targetId: z.string().trim().min(1, "targetId is required."),
-  reason: z.string().trim().min(1, "reason is required.").max(500),
+  reason: z.string().trim().min(1, "reason is required.").max(2000),
 });
 
 export const updateProfileSchema = z.object({

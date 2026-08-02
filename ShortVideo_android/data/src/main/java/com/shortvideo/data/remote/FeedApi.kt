@@ -70,9 +70,7 @@ interface SocialApi {
     suspend fun unsaveVideo(@Path("videoId") videoId: String): ApiEnvelope<Map<String, Boolean>>
 
     @POST("v1/reports")
-    suspend fun submitReport(
-        @Body body: CreateReportRequestDto,
-    ): ApiEnvelope<Map<String, Any?>>
+    suspend fun createReport(@Body body: CreateReportRequestDto): ApiEnvelope<Map<String, String>>
 }
 
 interface ProfileApi {
@@ -94,16 +92,19 @@ interface ProfileApi {
     suspend fun getProfile(@Path("userId") userId: String): ApiEnvelope<UserProfileDto>
 
     @GET("v1/users/{userId}/videos")
-    suspend fun getProfileVideos(@Path("userId") userId: String): ApiEnvelope<ProfileVideosDto>
+    suspend fun getProfileVideos(
+        @Path("userId") userId: String,
+        @Query("limit") limit: Int = 50,
+    ): ApiEnvelope<ProfileVideosDto>
 
     @GET("v1/users/me/liked")
     suspend fun getMyLikedVideos(
-        @Query("limit") limit: Int = 30,
+        @Query("limit") limit: Int = 50,
     ): ApiEnvelope<ProfileVideosDto>
 
     @GET("v1/users/me/saved")
     suspend fun getMySavedVideos(
-        @Query("limit") limit: Int = 30,
+        @Query("limit") limit: Int = 50,
     ): ApiEnvelope<ProfileVideosDto>
 }
 

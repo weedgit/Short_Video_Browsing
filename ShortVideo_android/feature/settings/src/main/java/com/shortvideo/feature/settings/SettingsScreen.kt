@@ -4,10 +4,12 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,9 +18,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -36,11 +41,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import com.shortvideo.domain.model.AppThemeMode
 import com.shortvideo.theme.PrimaryColor
 
 @Composable
@@ -200,6 +208,19 @@ fun SettingsScreen(
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
+        Text(text = "Appearance", style = MaterialTheme.typography.titleMedium)
+        Text(
+            text = "Choose Night or Light color mode.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        ThemeModeSelector(
+            selected = uiState.themeMode,
+            onSelected = viewModel::onThemeModeSelected,
+        )
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
         Text(text = "Account", style = MaterialTheme.typography.titleMedium)
 
         if (!uiState.errorMessage.isNullOrBlank()) {
@@ -256,6 +277,70 @@ fun SettingsScreen(
                     Text("Cancel")
                 }
             },
+        )
+    }
+}
+
+@Composable
+private fun ThemeModeSelector(
+    selected: AppThemeMode,
+    onSelected: (AppThemeMode) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        ThemeModeOption(
+            label = "Night",
+            icon = Icons.Default.DarkMode,
+            selected = selected == AppThemeMode.NIGHT,
+            onClick = { onSelected(AppThemeMode.NIGHT) },
+            modifier = Modifier.weight(1f),
+        )
+        ThemeModeOption(
+            label = "Light",
+            icon = Icons.Default.LightMode,
+            selected = selected == AppThemeMode.LIGHT,
+            onClick = { onSelected(AppThemeMode.LIGHT) },
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun ThemeModeOption(
+    label: String,
+    icon: ImageVector,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val borderColor = if (selected) PrimaryColor else MaterialTheme.colorScheme.outline
+    val background = if (selected) {
+        PrimaryColor.copy(alpha = 0.12f)
+    } else {
+        Color.Transparent
+    }
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .border(1.5.dp, borderColor, RoundedCornerShape(12.dp))
+            .background(background)
+            .clickable(onClick = onClick)
+            .padding(vertical = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = if (selected) PrimaryColor else MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.size(28.dp),
+        )
+        Text(
+            text = label,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+            color = if (selected) PrimaryColor else MaterialTheme.colorScheme.onSurface,
         )
     }
 }

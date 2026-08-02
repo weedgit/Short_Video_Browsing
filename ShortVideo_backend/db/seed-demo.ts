@@ -126,7 +126,7 @@ async function createUsers(passwordHash: string): Promise<User[]> {
         languageCode: "en",
         countryCode: "CN",
         passwordHash,
-        avatarUrl: `https://i.pravatar.cc/150?u=${encodeURIComponent(spec.email)}`,
+        avatarUrl: `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(spec.username)}`,
       },
     });
     users.push(user);
@@ -283,7 +283,7 @@ async function createSocialGraph(users: User[], videos: Awaited<ReturnType<typeo
       reporterId: erin.id,
       targetType: "VIDEO",
       targetId: reportVideo.id,
-      reason: "Spam / misleading (demo report)",
+      reason: "Spam / misleading\n\nThis looks like recycled promo content with a clickbait caption.",
       status: "OPEN",
     },
   });
@@ -292,7 +292,7 @@ async function createSocialGraph(users: User[], videos: Awaited<ReturnType<typeo
       reporterId: dave.id,
       targetType: "USER",
       targetId: bob.id,
-      reason: "Impersonation (demo)",
+      reason: "Impersonation\n\nThis account is pretending to be someone else (demo report).",
       status: "OPEN",
     },
   });

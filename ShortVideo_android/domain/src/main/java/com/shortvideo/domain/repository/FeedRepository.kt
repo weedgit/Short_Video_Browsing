@@ -4,6 +4,7 @@ import com.shortvideo.domain.model.DiscoverHashtag
 import com.shortvideo.domain.model.DiscoverTab
 import com.shortvideo.domain.model.DiscoverVideo
 import com.shortvideo.domain.model.FeedPage
+import com.shortvideo.domain.model.FeedVideo
 import com.shortvideo.domain.model.InboxNotification
 import com.shortvideo.domain.model.ProfileVideoItem
 import com.shortvideo.domain.model.UserProfile
@@ -26,15 +27,18 @@ interface SocialRepository {
     suspend fun unfollowUser(userId: String): Boolean
     suspend fun saveVideo(videoId: String): Boolean
     suspend fun unsaveVideo(videoId: String): Boolean
-    suspend fun reportComment(commentId: String, reason: String)
+    suspend fun reportVideo(videoId: String, title: String, content: String)
 }
 
 interface ProfileRepository {
     suspend fun getMyProfile(): UserProfile
     suspend fun getProfile(userId: String): UserProfile
     suspend fun getProfileVideos(userId: String): List<ProfileVideoItem>
+    suspend fun getProfileFeedVideos(userId: String, limit: Int = 50): List<FeedVideo>
     suspend fun getMyLikedVideos(): List<ProfileVideoItem>
+    suspend fun getMyLikedFeedVideos(limit: Int = 50): List<FeedVideo>
     suspend fun getMySavedVideos(): List<ProfileVideoItem>
+    suspend fun getMySavedFeedVideos(limit: Int = 50): List<FeedVideo>
     suspend fun updateMyProfile(displayName: String?, bio: String?): UserProfile
     suspend fun uploadAvatar(imageBytes: ByteArray, mimeType: String, fileName: String): UserProfile
 }

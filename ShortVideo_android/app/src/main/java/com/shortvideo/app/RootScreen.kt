@@ -48,11 +48,11 @@ fun RootScreen(
     }
 
     if (!gate.isReady) {
-        ShortVideoTheme(darkTheme = true) {
+        ShortVideoTheme(darkTheme = gate.isDarkTheme) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black),
+                    .background(if (gate.isDarkTheme) Color.Black else Color.White),
             )
         }
         return
@@ -83,16 +83,6 @@ fun RootScreen(
         DestinationRoute.PROFILE_ROUTE,
     )
 
-    val useDarkTheme = currentDestination?.route in setOf(
-        DestinationRoute.HOME_ROUTE,
-        DestinationRoute.UPLOAD_ROUTE,
-        DestinationRoute.DISCOVER_ROUTE,
-        DestinationRoute.INBOX_ROUTE,
-        DestinationRoute.PROFILE_ROUTE,
-        DestinationRoute.USER_PROFILE_ROUTE,
-        null,
-    )
-
     if (currentDestination?.route == DestinationRoute.HOME_ROUTE) {
         BackHandler {
             (context as? Activity)?.finish()
@@ -116,7 +106,7 @@ fun RootScreen(
         }
     }
 
-    ShortVideoTheme(darkTheme = useDarkTheme) {
+    ShortVideoTheme(darkTheme = gate.isDarkTheme) {
         Scaffold(
             bottomBar = {
                 if (showBottomBar) {

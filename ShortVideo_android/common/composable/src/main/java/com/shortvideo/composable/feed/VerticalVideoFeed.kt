@@ -63,12 +63,12 @@ fun VerticalVideoFeed(
     onShareClick: (FeedVideo) -> Unit = {},
     onCommentClick: (FeedVideo) -> Unit = {},
     onSubmitComment: (FeedVideo, String, String?) -> Unit = { _, _, _ -> },
-    onReportComment: (commentId: String, reason: String) -> Unit = { _, _ -> },
     onLoadComments: (FeedVideo) -> Unit = {},
+    onReportVideo: (FeedVideo, String, String) -> Unit = { _, _, _ -> },
     onFirstFrame: (FeedVideo, Long) -> Unit = { _, _ -> },
     onAvatarClick: (FeedVideo) -> Unit = {},
-    initialPage: Int = 0,
     showTopTabs: Boolean = true,
+    initialVideoId: String? = null,
     modifier: Modifier = Modifier,
 ) {
     if (videos.isEmpty()) return
@@ -79,9 +79,14 @@ fun VerticalVideoFeed(
         onDispose { playerPool.releaseAll() }
     }
 
-    val startPage = initialPage.coerceIn(0, videos.lastIndex)
+    val startIndex = remember(videos, initialVideoId) {
+        initialVideoId
+            ?.let { id -> videos.indexOfFirst { it.id == id } }
+            ?.takeIf { it >= 0 }
+            ?: 0
+    }
     val pagerState = rememberPagerState(
-        initialPage = startPage,
+        initialPage = startIndex,
         pageCount = { videos.size },
     )
     val coroutineScope = rememberCoroutineScope()
@@ -255,7 +260,6 @@ fun VerticalVideoFeed(
                             onCommentClick(video)
                             onLoadComments(video)
                         },
-                        onShareClick = { onShareClick(video) },
                         onSaveClick = { onSaveClick(video) },
                         modifier = Modifier.align(Alignment.BottomEnd),
                     )
@@ -299,7 +303,7 @@ fun VerticalVideoFeed(
                 comments = commentsForActive,
                 onDismiss = { showCommentsFor = null },
                 onSubmit = { text, parentId -> onSubmitComment(video, text, parentId) },
-                onReport = { comment, reason -> onReportComment(comment.id, reason) },
+                onReport = { title, content -> onReportVideo(video, title, content) },
             )
         }
     }
