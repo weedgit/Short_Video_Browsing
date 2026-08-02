@@ -62,7 +62,13 @@ private fun NavGraphBuilder.registerFeatureGraphs(
             )
         },
     )
-    discoverNavGraph()
+    discoverNavGraph(
+        onUserClick = { userId ->
+            navController.navigate(
+                com.shortvideo.core.DestinationRoute.userProfileRoute(userId),
+            )
+        },
+    )
     uploadNavGraph()
     inboxNavGraph()
     profileNavGraph(navController)

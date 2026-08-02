@@ -1,7 +1,6 @@
 package com.shortvideo.feature.discover
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -65,6 +64,7 @@ import com.shortvideo.theme.SurfaceElevated
 
 @Composable
 fun DiscoverScreen(
+    onUserClick: (String) -> Unit,
     viewModel: DiscoverViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -121,6 +121,7 @@ fun DiscoverScreen(
                         DiscoverTab.FRIENDS -> "Follow creators to see them here"
                         else -> "No users found"
                     },
+                    onUserClick = onUserClick,
                     onFollowToggle = viewModel::onFollowToggle,
                 )
             }
@@ -293,6 +294,7 @@ private fun DiscoverVideoCell(video: DiscoverVideo) {
 private fun DiscoverUsersContent(
     users: List<UserProfile>,
     emptyMessage: String,
+    onUserClick: (String) -> Unit,
     onFollowToggle: (UserProfile) -> Unit,
 ) {
     if (users.isEmpty()) {
@@ -313,6 +315,7 @@ private fun DiscoverUsersContent(
         items(users, key = { it.id }) { user ->
             DiscoverUserRow(
                 user = user,
+                onUserClick = { onUserClick(user.id) },
                 onFollowToggle = { onFollowToggle(user) },
             )
         }
@@ -322,11 +325,13 @@ private fun DiscoverUsersContent(
 @Composable
 private fun DiscoverUserRow(
     user: UserProfile,
+    onUserClick: () -> Unit,
     onFollowToggle: () -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(onClick = onUserClick)
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -358,24 +363,20 @@ private fun DiscoverUserRow(
         }
         Button(
             onClick = onFollowToggle,
+            elevation = ButtonDefaults.buttonElevation(
+                defaultElevation = 0.dp,
+                pressedElevation = 0.dp,
+            ),
             colors = ButtonDefaults.buttonColors(
                 containerColor = if (user.isFollowing) Color(0xFF2A2A2A) else PrimaryColor,
                 contentColor = Color.White,
             ),
             shape = RoundedCornerShape(8.dp),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
-            modifier = Modifier
-                .height(32.dp)
-                .then(
-                    if (user.isFollowing) {
-                        Modifier.border(1.dp, Color(0xFF3A3A3A), RoundedCornerShape(8.dp))
-                    } else {
-                        Modifier
-                    },
-                ),
+            modifier = Modifier.height(32.dp),
         ) {
             Text(
-                text = if (user.isFollowing) "Following" else "Follow",
+                text = if (user.isFollowing) "Unfollow" else "Follow",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -390,8 +391,10 @@ private fun searchPlaceholder(tab: DiscoverTab): String =
         DiscoverTab.FRIENDS -> "Search friends"
     }
 
-fun NavGraphBuilder.discoverNavGraph() {
+fun NavGraphBuilder.discoverNavGraph(
+    onUserClick: (String) -> Unit,
+) {
     composable(DestinationRoute.DISCOVER_ROUTE) {
-        DiscoverScreen()
+        DiscoverScreen(onUserClick = onUserClick)
     }
 }
