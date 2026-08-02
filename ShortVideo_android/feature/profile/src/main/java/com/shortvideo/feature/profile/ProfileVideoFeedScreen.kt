@@ -1,9 +1,15 @@
-package com.shortvideo.feature.home
+package com.shortvideo.feature.profile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -11,20 +17,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
-import androidx.navigation.NavGraphBuilder
-import androidx.navigation.compose.composable
 import com.shortvideo.composable.feed.VerticalVideoFeed
-import com.shortvideo.core.DestinationRoute
 
 @UnstableApi
 @Composable
-fun HomeScreen(
-    viewModel: HomeViewModel = hiltViewModel(),
-    onSearchClick: () -> Unit = {},
-    onAvatarClick: (authorId: String) -> Unit = {},
+fun ProfileVideoFeedScreen(
+    onNavigateBack: () -> Unit,
+    onAvatarClick: (authorId: String) -> Unit,
+    viewModel: ProfileVideoFeedViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -56,9 +60,6 @@ fun HomeScreen(
                     onNearEnd = viewModel::onNearEnd,
                     onActiveVideoChanged = viewModel::onActiveVideoChanged,
                     onVideoStarted = viewModel::onVideoStarted,
-                    selectedTab = uiState.selectedTab,
-                    onTabSelected = viewModel::onTabSelected,
-                    onSearchClick = onSearchClick,
                     commentsForActive = uiState.comments,
                     onLikeClick = viewModel::onLikeClick,
                     onFollowClick = viewModel::onFollowClick,
@@ -68,6 +69,8 @@ fun HomeScreen(
                     onSubmitComment = viewModel::onSubmitComment,
                     onReportVideo = viewModel::onReportVideo,
                     onFirstFrame = viewModel::onFirstFrame,
+                    showTopTabs = false,
+                    initialVideoId = uiState.startVideoId,
                     onAvatarClick = { video ->
                         val authorId = video.authorId
                         if (!authorId.isNullOrBlank()) {
@@ -77,18 +80,19 @@ fun HomeScreen(
                 )
             }
         }
-    }
-}
 
-@UnstableApi
-fun NavGraphBuilder.homeNavGraph(
-    onSearchClick: () -> Unit = {},
-    onAvatarClick: (authorId: String) -> Unit = {},
-) {
-    composable(DestinationRoute.HOME_ROUTE) {
-        HomeScreen(
-            onSearchClick = onSearchClick,
-            onAvatarClick = onAvatarClick,
-        )
+        IconButton(
+            onClick = onNavigateBack,
+            modifier = Modifier
+                .statusBarsPadding()
+                .padding(4.dp)
+                .align(Alignment.TopStart),
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Back",
+                tint = Color.White,
+            )
+        }
     }
 }

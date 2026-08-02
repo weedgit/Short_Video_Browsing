@@ -18,7 +18,6 @@ import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,7 +41,6 @@ fun FeedRightActionRail(
     onFollowClick: () -> Unit = {},
     onLikeClick: () -> Unit = {},
     onCommentClick: () -> Unit = {},
-    onShareClick: () -> Unit = {},
     onSaveClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -100,12 +98,6 @@ fun FeedRightActionRail(
             tint = if (video.isSaved) Color(0xFFFFD700) else Color.White,
             label = "Save",
             onClick = onSaveClick,
-        )
-        RailAction(
-            icon = Icons.Default.Share,
-            tint = Color.White,
-            label = formatCount(video.shareCount),
-            onClick = onShareClick,
         )
     }
 }

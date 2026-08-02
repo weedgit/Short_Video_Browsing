@@ -161,7 +161,7 @@ export const getUserProfileHandler = asyncHandler(async (req: Request, res: Resp
 export const getUserVideosHandler = asyncHandler(async (req: Request, res: Response) => {
   const userId = requireParam(req.params.userId, "userId");
   const query = parseQuery(userVideosQuerySchema, req.query);
-  const page = await listUserVideos(userId, query);
+  const page = await listUserVideos(userId, query, req.userId);
   sendData(res, page);
 });
 

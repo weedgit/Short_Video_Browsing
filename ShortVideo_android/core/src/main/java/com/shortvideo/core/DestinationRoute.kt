@@ -10,6 +10,11 @@ object DestinationRoute {
     const val PROFILE_ROUTE = "profile_route"
     const val USER_ID_ARG = "userId"
     const val USER_PROFILE_ROUTE = "user_profile_route/{$USER_ID_ARG}"
+    const val PROFILE_VIDEO_SOURCE_ARG = "source"
+    const val PROFILE_VIDEO_OWNER_ARG = "ownerId"
+    const val PROFILE_VIDEO_ID_ARG = "videoId"
+    const val PROFILE_VIDEO_FEED_ROUTE =
+        "profile_video_feed/{$PROFILE_VIDEO_SOURCE_ARG}/{$PROFILE_VIDEO_OWNER_ARG}/{$PROFILE_VIDEO_ID_ARG}"
     const val AUTH_ROUTE = "auth_route"
     const val AUTH_LOGIN_ROUTE = "auth_login_route"
     const val AUTH_REGISTER_ROUTE = "auth_register_route"
@@ -22,6 +27,9 @@ object DestinationRoute {
 
     fun userProfileRoute(userId: String): String =
         "user_profile_route/${Uri.encode(userId)}"
+
+    fun profileVideoFeedRoute(source: String, ownerId: String, videoId: String): String =
+        "profile_video_feed/${Uri.encode(source)}/${Uri.encode(ownerId)}/${Uri.encode(videoId)}"
 
     fun authLoginRoute(returnRoute: String? = null): String =
         "$AUTH_LOGIN_ROUTE?$AUTH_RETURN_ROUTE_ARG=${Uri.encode(returnRoute.orEmpty())}"

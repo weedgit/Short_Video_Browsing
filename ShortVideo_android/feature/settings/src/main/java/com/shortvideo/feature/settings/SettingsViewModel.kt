@@ -4,9 +4,11 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.shortvideo.domain.model.AppThemeMode
 import com.shortvideo.domain.model.UserProfile
 import com.shortvideo.domain.repository.AuthRepository
 import com.shortvideo.domain.repository.ProfileRepository
+import com.shortvideo.domain.repository.ThemeRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -24,6 +26,7 @@ data class SettingsUiState(
     val profile: UserProfile? = null,
     val displayName: String = "",
     val bio: String = "",
+    val themeMode: AppThemeMode = AppThemeMode.NIGHT,
     val errorMessage: String? = null,
     val profileSavedMessage: String? = null,
     val showDeleteConfirm: Boolean = false,
@@ -35,6 +38,7 @@ data class SettingsUiState(
 class SettingsViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val profileRepository: ProfileRepository,
+    private val themeRepository: ThemeRepository,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -42,6 +46,11 @@ class SettingsViewModel @Inject constructor(
 
     init {
         loadProfile()
+        viewModelScope.launch {
+            themeRepository.themeMode.collect { mode ->
+                _uiState.update { it.copy(themeMode = mode) }
+            }
+        }
     }
 
     fun loadProfile() {
@@ -78,6 +87,13 @@ class SettingsViewModel @Inject constructor(
     fun onBioChange(value: String) {
         if (value.length <= 200) {
             _uiState.update { it.copy(bio = value, profileSavedMessage = null) }
+        }
+    }
+
+    fun onThemeModeSelected(mode: AppThemeMode) {
+        if (mode == _uiState.value.themeMode) return
+        viewModelScope.launch {
+            themeRepository.setThemeMode(mode)
         }
     }
 

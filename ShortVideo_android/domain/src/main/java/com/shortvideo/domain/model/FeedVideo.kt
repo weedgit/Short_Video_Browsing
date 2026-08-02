@@ -99,4 +99,6 @@ data class InboxNotification(
     val createdAtLabel: String,
     val videoId: String? = null,
     val actorUserId: String? = null,
+    val actorName: String? = null,
+    val actorAvatarUrl: String? = null,
 )

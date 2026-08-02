@@ -187,6 +187,14 @@ class HomeViewModel @Inject constructor(
         updateVideo(video.id) { it.copy(shareCount = it.shareCount + 1) }
     }
 
+    fun onReportVideo(video: FeedVideo, title: String, content: String) {
+        viewModelScope.launch {
+            runCatching {
+                socialRepository.reportVideo(video.id, title, content)
+            }
+        }
+    }
+
     fun onLoadComments(video: FeedVideo) {
         viewModelScope.launch {
             runCatching { socialRepository.getComments(video.id) }

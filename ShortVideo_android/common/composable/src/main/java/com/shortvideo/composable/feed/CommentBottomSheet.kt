@@ -3,6 +3,7 @@ package com.shortvideo.composable.feed
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -18,7 +19,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,6 +31,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -54,12 +58,24 @@ fun CommentBottomSheet(
     comments: List<VideoComment>,
     onDismiss: () -> Unit,
     onSubmit: (text: String, parentId: String?) -> Unit,
+    onReport: (title: String, content: String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var draft by remember { mutableStateOf("") }
     var replyTarget by remember { mutableStateOf<VideoComment?>(null) }
     var expandedReplyIds by remember { mutableStateOf(setOf<String>()) }
+    var showReportDialog by remember { mutableStateOf(false) }
+
+    if (showReportDialog) {
+        ReportVideoDialog(
+            onDismiss = { showReportDialog = false },
+            onSend = { title, content ->
+                onReport(title, content)
+                showReportDialog = false
+            },
+        )
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -74,14 +90,28 @@ fun CommentBottomSheet(
                 .heightIn(min = 360.dp, max = 620.dp)
                 .padding(horizontal = 16.dp),
         ) {
-            Text(
-                text = "$commentCount comments",
-                color = Color.White,
-                fontWeight = FontWeight.SemiBold,
+            Box(
                 modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
+                    .fillMaxWidth()
                     .padding(bottom = 12.dp),
-            )
+            ) {
+                Text(
+                    text = "$commentCount comments",
+                    color = Color.White,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.align(Alignment.Center),
+                )
+                Text(
+                    text = "Report",
+                    color = PrimaryColor,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp,
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .clickable { showReportDialog = true }
+                        .padding(horizontal = 4.dp, vertical = 4.dp),
+                )
+            }
             HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
             LazyColumn(
                 modifier = Modifier
@@ -129,7 +159,6 @@ fun CommentBottomSheet(
                                         comment = reply,
                                         isReply = true,
                                         onReply = {
-                                            // Reply under the same root thread.
                                             replyTarget = comment.copy(
                                                 authorName = reply.authorName,
                                             )
@@ -184,7 +213,7 @@ fun CommentBottomSheet(
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 24.dp),
@@ -204,7 +233,7 @@ fun CommentBottomSheet(
                     },
                     singleLine = true,
                 )
-                Button(
+                IconButton(
                     onClick = {
                         val text = draft.trim()
                         if (text.isNotEmpty()) {
@@ -216,14 +245,78 @@ fun CommentBottomSheet(
                             replyTarget = null
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor),
+                    modifier = Modifier.size(48.dp),
                 ) {
-                    Text("Post")
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Send,
+                        contentDescription = "Send comment",
+                        tint = if (draft.isBlank()) Color.White.copy(alpha = 0.35f) else PrimaryColor,
+                        modifier = Modifier.size(28.dp),
+                    )
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
         }
     }
+}
+
+@Composable
+private fun ReportVideoDialog(
+    onDismiss: () -> Unit,
+    onSend: (title: String, content: String) -> Unit,
+) {
+    var title by remember { mutableStateOf("") }
+    var content by remember { mutableStateOf("") }
+    val canSend = title.isNotBlank() && content.isNotBlank()
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = SurfaceElevated,
+        title = {
+            Text(
+                text = "Report",
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Title") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = content,
+                    onValueChange = { content = it },
+                    label = { Text("Content") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 100.dp),
+                    minLines = 3,
+                    maxLines = 6,
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (canSend) onSend(title.trim(), content.trim())
+                },
+                enabled = canSend,
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor),
+            ) {
+                Text("Send")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = Color.White.copy(alpha = 0.7f))
+            }
+        },
+    )
 }
 
 @Composable

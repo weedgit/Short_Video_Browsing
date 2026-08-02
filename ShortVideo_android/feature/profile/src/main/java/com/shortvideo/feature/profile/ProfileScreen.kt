@@ -63,6 +63,7 @@ import com.shortvideo.theme.SubTextColor
 fun ProfileScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateBack: (() -> Unit)? = null,
+    onVideoClick: (source: String, ownerId: String, videoId: String) -> Unit = { _, _, _ -> },
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -100,6 +101,12 @@ fun ProfileScreen(
         return
     }
 
+    val videoSource = when (uiState.selectedTab) {
+        ProfileTab.VIDEOS -> ProfileVideoSource.VIDEOS.apiValue
+        ProfileTab.FAVORITES -> ProfileVideoSource.SAVED.apiValue
+        ProfileTab.LIKED -> ProfileVideoSource.LIKED.apiValue
+    }
+
     ProfileContent(
         profile = profile,
         isOtherProfile = uiState.isOtherProfile,
@@ -110,6 +117,9 @@ fun ProfileScreen(
         onNavigateBack = onNavigateBack,
         onFollowToggle = viewModel::toggleFollow,
         onSelectTab = viewModel::selectTab,
+        onVideoClick = { videoId ->
+            onVideoClick(videoSource, profile.id, videoId)
+        },
     )
 }
 
@@ -124,6 +134,7 @@ private fun ProfileContent(
     onNavigateBack: (() -> Unit)?,
     onFollowToggle: () -> Unit,
     onSelectTab: (ProfileTab) -> Unit,
+    onVideoClick: (String) -> Unit,
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
@@ -180,7 +191,10 @@ private fun ProfileContent(
             }
         } else {
             items(gridItems, key = { "${selectedTab.name}-${it.id}" }) { video ->
-                ProfileVideoCell(video = video)
+                ProfileVideoCell(
+                    video = video,
+                    onClick = { onVideoClick(video.id) },
+                )
             }
         }
     }
@@ -425,12 +439,15 @@ private fun ProfileTabItem(
 }
 
 @Composable
-private fun ProfileVideoCell(video: ProfileVideoItem) {
+private fun ProfileVideoCell(
+    video: ProfileVideoItem,
+    onClick: () -> Unit,
+) {
     Box(
         modifier = Modifier
             .aspectRatio(9f / 16f)
             .background(Color(0xFF111111))
-            .clickable { },
+            .clickable(onClick = onClick),
     ) {
         AsyncImage(
             model = video.thumbnailUrl ?: video.id,

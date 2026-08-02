@@ -64,8 +64,11 @@ fun VerticalVideoFeed(
     onCommentClick: (FeedVideo) -> Unit = {},
     onSubmitComment: (FeedVideo, String, String?) -> Unit = { _, _, _ -> },
     onLoadComments: (FeedVideo) -> Unit = {},
+    onReportVideo: (FeedVideo, String, String) -> Unit = { _, _, _ -> },
     onFirstFrame: (FeedVideo, Long) -> Unit = { _, _ -> },
     onAvatarClick: (FeedVideo) -> Unit = {},
+    showTopTabs: Boolean = true,
+    initialVideoId: String? = null,
     modifier: Modifier = Modifier,
 ) {
     if (videos.isEmpty()) return
@@ -76,7 +79,16 @@ fun VerticalVideoFeed(
         onDispose { playerPool.releaseAll() }
     }
 
-    val pagerState = rememberPagerState(pageCount = { videos.size })
+    val startIndex = remember(videos, initialVideoId) {
+        initialVideoId
+            ?.let { id -> videos.indexOfFirst { it.id == id } }
+            ?.takeIf { it >= 0 }
+            ?: 0
+    }
+    val pagerState = rememberPagerState(
+        initialPage = startIndex,
+        pageCount = { videos.size },
+    )
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
     val directionThresholdPx = with(density) { 16.dp.toPx() }
@@ -248,7 +260,6 @@ fun VerticalVideoFeed(
                             onCommentClick(video)
                             onLoadComments(video)
                         },
-                        onShareClick = { onShareClick(video) },
                         onSaveClick = { onSaveClick(video) },
                         modifier = Modifier.align(Alignment.BottomEnd),
                     )
@@ -275,14 +286,16 @@ fun VerticalVideoFeed(
             }
         }
 
-        FeedTopTabs(
-            selectedTab = selectedTab,
-            onTabSelected = onTabSelected,
-            onSearchClick = onSearchClick,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth(),
-        )
+        if (showTopTabs) {
+            FeedTopTabs(
+                selectedTab = selectedTab,
+                onTabSelected = onTabSelected,
+                onSearchClick = onSearchClick,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth(),
+            )
+        }
 
         showCommentsFor?.let { video ->
             CommentBottomSheet(
@@ -290,6 +303,7 @@ fun VerticalVideoFeed(
                 comments = commentsForActive,
                 onDismiss = { showCommentsFor = null },
                 onSubmit = { text, parentId -> onSubmitComment(video, text, parentId) },
+                onReport = { title, content -> onReportVideo(video, title, content) },
             )
         }
     }

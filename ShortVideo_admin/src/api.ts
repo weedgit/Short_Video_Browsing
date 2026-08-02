@@ -3,9 +3,14 @@ import type {
   AdminAnnouncement,
   AdminReport,
   AdminUser,
+  AdminUserProfile,
   AdminVideo,
+  AnnouncementListFilters,
   AuthSession,
   Page,
+  ReportListFilters,
+  UserListFilters,
+  VideoListFilters,
 } from "./types";
 
 const DEFAULT_API_BASE_URL = "http://localhost:3000";
@@ -15,6 +20,28 @@ const USER_STORAGE_KEY = "shortvideo_admin_user";
 export function getApiBaseUrl(): string {
   const configured = import.meta.env.VITE_API_BASE_URL?.trim();
   return configured && configured.length > 0 ? configured.replace(/\/$/, "") : DEFAULT_API_BASE_URL;
+}
+
+/** Resolve uploaded media (e.g. /avatars/...) against the API host used by admin. */
+export function resolveMediaUrl(url: string | null | undefined): string | null {
+  if (!url?.trim()) return null;
+  const raw = url.trim();
+  const base = getApiBaseUrl();
+
+  if (raw.startsWith("/")) {
+    return `${base}${raw}`;
+  }
+
+  try {
+    const parsed = new URL(raw);
+    if (parsed.pathname.startsWith("/avatars/")) {
+      return `${base}${parsed.pathname}${parsed.search}`;
+    }
+  } catch {
+    // Keep original string for non-URL values.
+  }
+
+  return raw;
 }
 
 export function getAccessToken(): string | null {
@@ -73,13 +100,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return (payload?.data ?? payload) as T;
 }
 
-function withCursor(path: string, cursor?: string, extra?: Record<string, string | undefined>): string {
-  const params = new URLSearchParams();
-  if (cursor) params.set("cursor", cursor);
-  for (const [key, value] of Object.entries(extra ?? {})) {
-    if (value) params.set(key, value);
+function withQuery(path: string, params?: Record<string, string | number | undefined>): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params ?? {})) {
+    if (value === undefined || value === "") continue;
+    search.set(key, String(value));
   }
-  const qs = params.toString();
+  const qs = search.toString();
   return qs ? `${path}?${qs}` : path;
 }
 
@@ -94,8 +121,15 @@ export async function login(email: string, password: string): Promise<AuthSessio
 
 // ---------- Users ----------
 
-export function fetchUsers(cursor?: string): Promise<Page<AdminUser>> {
-  return request<Page<AdminUser>>(withCursor("/v1/admin/users", cursor));
+export function fetchUsers(page = 1, filters?: UserListFilters): Promise<Page<AdminUser>> {
+  return request<Page<AdminUser>>(
+    withQuery("/v1/admin/users", {
+      page,
+      q: filters?.q,
+      role: filters?.role,
+      status: filters?.status,
+    }),
+  );
 }
 
 export function updateUser(
@@ -110,8 +144,29 @@ export function updateUser(
 
 // ---------- Videos ----------
 
-export function fetchVideos(cursor?: string, status?: AdminVideo["status"]): Promise<Page<AdminVideo>> {
-  return request<Page<AdminVideo>>(withCursor("/v1/admin/videos", cursor, { status }));
+export function fetchVideos(
+  page = 1,
+  filters?: VideoListFilters,
+  limit?: number,
+): Promise<Page<AdminVideo>> {
+  return request<Page<AdminVideo>>(
+    withQuery("/v1/admin/videos", {
+      page,
+      limit,
+      status: filters?.status,
+      q: filters?.q,
+      hashtag: filters?.hashtag,
+      category: filters?.category,
+    }),
+  );
+}
+
+export function fetchVideo(videoId: string): Promise<AdminVideo> {
+  return request<AdminVideo>(`/v1/admin/videos/${videoId}`);
+}
+
+export function fetchUserProfile(userId: string): Promise<AdminUserProfile> {
+  return request<AdminUserProfile>(`/v1/admin/users/${userId}`);
 }
 
 export function updateVideoStatus(videoId: string, status: AdminVideo["status"]): Promise<AdminVideo> {
@@ -123,8 +178,14 @@ export function updateVideoStatus(videoId: string, status: AdminVideo["status"])
 
 // ---------- Reports ----------
 
-export function fetchReports(cursor?: string, status?: AdminReport["status"]): Promise<Page<AdminReport>> {
-  return request<Page<AdminReport>>(withCursor("/v1/admin/reports", cursor, { status }));
+export function fetchReports(page = 1, filters?: ReportListFilters): Promise<Page<AdminReport>> {
+  return request<Page<AdminReport>>(
+    withQuery("/v1/admin/reports", {
+      page,
+      status: filters?.status,
+      q: filters?.q,
+    }),
+  );
 }
 
 export function updateReportStatus(id: string, status: AdminReport["status"]): Promise<AdminReport> {
@@ -136,8 +197,17 @@ export function updateReportStatus(id: string, status: AdminReport["status"]): P
 
 // ---------- Announcements ----------
 
-export function fetchAnnouncements(): Promise<{ items: AdminAnnouncement[] }> {
-  return request<{ items: AdminAnnouncement[] }>("/v1/admin/announcements");
+export function fetchAnnouncements(
+  page = 1,
+  filters?: AnnouncementListFilters,
+): Promise<Page<AdminAnnouncement>> {
+  return request<Page<AdminAnnouncement>>(
+    withQuery("/v1/admin/announcements", {
+      page,
+      q: filters?.q,
+      active: filters?.active,
+    }),
+  );
 }
 
 export function createAnnouncement(data: {
@@ -169,6 +239,6 @@ export function deleteAnnouncement(id: string): Promise<{ success: boolean }> {
 
 // ---------- Analytics ----------
 
-export function fetchAnalytics(): Promise<AdminAnalytics> {
-  return request<AdminAnalytics>("/v1/admin/analytics");
+export function fetchAnalytics(range: 7 | 30 = 7): Promise<AdminAnalytics> {
+  return request<AdminAnalytics>(`/v1/admin/analytics?range=${range}`);
 }

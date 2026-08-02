@@ -5,6 +5,8 @@ import {
   createAnnouncement,
   deleteAnnouncement,
   getAnalytics,
+  getUserProfile,
+  getVideo,
   listAnnouncements,
   listReports,
   listUsers,
@@ -15,6 +17,8 @@ import {
   updateVideoStatus,
 } from "../service/admin.service";
 import {
+  adminAnalyticsQuerySchema,
+  adminAnnouncementsQuerySchema,
   adminCreateAnnouncementSchema,
   adminReportsQuerySchema,
   adminUpdateAnnouncementSchema,
@@ -77,6 +81,18 @@ export const getAdminVideosHandler = asyncHandler(async (req: Request, res: Resp
   sendData(res, page);
 });
 
+export const getAdminVideoHandler = asyncHandler(async (req: Request, res: Response) => {
+  const videoId = requireParam(req.params.videoId, "videoId");
+  const video = await getVideo(videoId);
+  sendData(res, video);
+});
+
+export const getAdminUserHandler = asyncHandler(async (req: Request, res: Response) => {
+  const userId = requireParam(req.params.userId, "userId");
+  const user = await getUserProfile(userId);
+  sendData(res, user);
+});
+
 export const patchAdminVideoHandler = asyncHandler(async (req: Request, res: Response) => {
   const videoId = requireParam(req.params.videoId, "videoId");
   const body = parseBody(adminUpdateVideoSchema, req.body);
@@ -98,8 +114,9 @@ export const patchAdminReportHandler = asyncHandler(async (req: Request, res: Re
 });
 
 export const getAdminAnnouncementsHandler = asyncHandler(async (req: Request, res: Response) => {
-  const items = await listAnnouncements();
-  sendData(res, { items });
+  const query = parseQuery(adminAnnouncementsQuerySchema, req.query);
+  const page = await listAnnouncements(query);
+  sendData(res, page);
 });
 
 export const postAdminAnnouncementHandler = asyncHandler(async (req: Request, res: Response) => {
@@ -125,7 +142,8 @@ export const deleteAdminAnnouncementHandler = asyncHandler(async (req: Request, 
   sendData(res, { success: true });
 });
 
-export const getAdminAnalyticsHandler = asyncHandler(async (_req: Request, res: Response) => {
-  const analytics = await getAnalytics();
+export const getAdminAnalyticsHandler = asyncHandler(async (req: Request, res: Response) => {
+  const query = parseQuery(adminAnalyticsQuerySchema, req.query);
+  const analytics = await getAnalytics(query.range);
   sendData(res, analytics);
 });

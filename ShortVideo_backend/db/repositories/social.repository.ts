@@ -281,6 +281,10 @@ export async function findUserVideos(userId: string, limit: number, cursor?: Cur
           }
         : {}),
     },
+    include: {
+      user: true,
+      hashtags: true,
+    },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take: limit,
   });
@@ -303,18 +307,19 @@ export async function findLikedVideos(userId: string, limit: number, cursor?: Cu
     },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take: limit,
-    include: { video: true },
+    include: {
+      video: {
+        include: {
+          user: true,
+          hashtags: true,
+        },
+      },
+    },
   });
 
   return rows.map((row) => ({
-    id: row.video.id,
-    thumbnailUrl: row.video.thumbnailUrl,
-    streamUrl: row.video.streamUrl,
-    hlsUrl: row.video.hlsUrl,
-    cloudflareAssetId: row.video.cloudflareAssetId,
-    likeCount: row.video.likeCount,
-    durationMs: row.video.durationMs,
-    createdAt: row.createdAt,
+    ...row.video,
+    cursorCreatedAt: row.createdAt,
     cursorId: row.id,
   }));
 }
@@ -336,18 +341,19 @@ export async function findSavedVideos(userId: string, limit: number, cursor?: Cu
     },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take: limit,
-    include: { video: true },
+    include: {
+      video: {
+        include: {
+          user: true,
+          hashtags: true,
+        },
+      },
+    },
   });
 
   return rows.map((row) => ({
-    id: row.video.id,
-    thumbnailUrl: row.video.thumbnailUrl,
-    streamUrl: row.video.streamUrl,
-    hlsUrl: row.video.hlsUrl,
-    cloudflareAssetId: row.video.cloudflareAssetId,
-    likeCount: row.video.likeCount,
-    durationMs: row.video.durationMs,
-    createdAt: row.createdAt,
+    ...row.video,
+    cursorCreatedAt: row.createdAt,
     cursorId: row.id,
   }));
 }

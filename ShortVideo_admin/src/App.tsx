@@ -4,6 +4,7 @@ import { AnalyticsTab } from "./components/AnalyticsTab";
 import { AnnouncementsTab } from "./components/AnnouncementsTab";
 import { LoginForm } from "./components/LoginForm";
 import { ReportsTab } from "./components/ReportsTab";
+import { UserAvatar } from "./components/UserAvatar";
 import { UsersTab } from "./components/UsersTab";
 import { VideosTab } from "./components/VideosTab";
 import type { AuthSession, AuthUser } from "./types";
@@ -58,7 +59,18 @@ export default function App() {
         </nav>
 
         <div className="sidebar-footer">
-          <div className="who">{user.displayName}</div>
+          <div className="sidebar-profile">
+            <UserAvatar
+              className="sidebar-avatar"
+              name={user.displayName}
+              username={user.username}
+              avatarUrl={user.avatarUrl}
+            />
+            <div className="sidebar-profile-text">
+              <div className="who">{user.displayName}</div>
+              <div className="sidebar-username">@{user.username}</div>
+            </div>
+          </div>
           <button className="btn btn-secondary btn-sm" onClick={handleLogout} style={{ width: "100%" }}>
             Sign out
           </button>

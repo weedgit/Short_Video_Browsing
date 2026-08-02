@@ -39,5 +39,6 @@ dependencies {
     implementation(project(":common:composable"))
     baseDependencies()
     composeDependencies()
+    media3Dependencies()
     coilDependencies()
 }

@@ -81,6 +81,7 @@ dependencies {
 
     baseDependencies()
     composeDependencies()
+    media3Dependencies()
     workManagerDependencies()
     testDependencies()
 }
