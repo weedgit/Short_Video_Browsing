@@ -103,16 +103,16 @@ data class UserProfileDto(
 data class ProfileVideoItemDto(
     @SerializedName("id") val id: String,
     @SerializedName("thumbnailUrl") val thumbnailUrl: String?,
-    @SerializedName("likeCount") val likeCount: Long,
-    @SerializedName("durationMs") val durationMs: Long,
+    @SerializedName("likeCount") val likeCount: Long = 0,
+    @SerializedName("durationMs") val durationMs: Long = 0,
     @SerializedName("streamUrl") val streamUrl: String? = null,
-    @SerializedName("playbackFormat") val playbackFormat: String? = "mp4",
-    @SerializedName("description") val description: String? = "",
+    @SerializedName("playbackFormat") val playbackFormat: String? = null,
+    @SerializedName("description") val description: String? = null,
     @SerializedName("category") val category: String? = null,
-    @SerializedName("commentCount") val commentCount: Long = 0,
-    @SerializedName("shareCount") val shareCount: Long = 0,
+    @SerializedName("commentCount") val commentCount: Long? = null,
+    @SerializedName("shareCount") val shareCount: Long? = null,
     @SerializedName("musicLabel") val musicLabel: String? = null,
-    @SerializedName("hashtags") val hashtags: List<String> = emptyList(),
+    @SerializedName("hashtags") val hashtags: List<String>? = null,
 )
 
 data class ProfileVideosDto(
