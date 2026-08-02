@@ -16,6 +16,7 @@ import {
   findSavedVideoIds,
   findTrendingHashtags,
   findTrendingVideos,
+  listFollowingUsers,
   findUserPublicProfile,
   findLikedVideos as findLikedVideosRepo,
   findSavedVideos as findSavedVideosRepo,
@@ -27,6 +28,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
   saveVideo as saveVideoRepo,
+  searchFollowingUsers,
   searchHashtags,
   searchUsers,
   searchVideos,
@@ -407,9 +409,84 @@ export async function listSavedVideos(
   return mapInteractionVideoPage(rows, query.limit);
 }
 
-export async function discover(query: DiscoverQueryInput): Promise<DiscoverResult> {
+export async function discover(
+  query: DiscoverQueryInput,
+  viewerId?: string,
+): Promise<DiscoverResult> {
   const q = query.q?.trim();
+  const tab = query.tab;
 
+  const mapVideo = (video: {
+    id: string;
+    description: string;
+    likeCount: number;
+    thumbnailUrl: string | null;
+    streamUrl: string | null;
+    hlsUrl: string | null;
+    cloudflareAssetId: string | null;
+    user?: { id: string; username: string; displayName: string; avatarUrl: string | null } | null;
+  }) => ({
+    id: video.id,
+    description: video.description,
+    thumbnailUrl: resolveThumbnailUrl(video),
+    likeCount: video.likeCount,
+    authorId: video.user?.id ?? null,
+    authorName: video.user?.displayName ?? video.user?.username ?? "creator",
+    authorAvatarUrl: video.user?.avatarUrl ?? null,
+  });
+
+  const mapUser = (
+    user: {
+      id: string;
+      username: string;
+      displayName: string;
+      avatarUrl: string | null;
+    },
+    isFollowing?: boolean,
+  ) => ({
+    id: user.id,
+    username: user.username,
+    displayName: user.displayName,
+    avatarUrl: user.avatarUrl,
+    isFollowing,
+  });
+
+  if (tab === "friends") {
+    if (!viewerId) {
+      return { hashtags: [], users: [], videos: [] };
+    }
+
+    const users = q
+      ? await searchFollowingUsers(viewerId, q, query.limit)
+      : await listFollowingUsers(viewerId, query.limit);
+
+    return {
+      hashtags: [],
+      users: users.map((user) => mapUser(user, true)),
+      videos: [],
+    };
+  }
+
+  if (tab === "users") {
+    const users = await searchUsers(q ?? "", query.limit);
+    const filtered = viewerId ? users.filter((user) => user.id !== viewerId) : users;
+    const followingSet = viewerId
+      ? await findFollowingUserIdsSubset(
+          viewerId,
+          filtered.map((user) => user.id),
+        )
+      : undefined;
+
+    return {
+      hashtags: [],
+      users: filtered.map((user) =>
+        mapUser(user, followingSet ? followingSet.has(user.id) : undefined),
+      ),
+      videos: [],
+    };
+  }
+
+  // tab === "videos"
   if (!q) {
     const [hashtags, videos] = await Promise.all([
       findTrendingHashtags(query.limit),
@@ -419,36 +496,20 @@ export async function discover(query: DiscoverQueryInput): Promise<DiscoverResul
     return {
       hashtags,
       users: [],
-      videos: videos.map((video) => ({
-        id: video.id,
-        description: video.description,
-        thumbnailUrl: resolveThumbnailUrl(video),
-        likeCount: video.likeCount,
-      })),
+      videos: videos.map(mapVideo),
     };
   }
 
   const bareQuery = q.replace(/^#/, "");
-  const [hashtags, users, videos] = await Promise.all([
+  const [hashtags, videos] = await Promise.all([
     searchHashtags(bareQuery, query.limit),
-    searchUsers(q, query.limit),
     searchVideos(q, query.limit),
   ]);
 
   return {
     hashtags,
-    users: users.map((user) => ({
-      id: user.id,
-      username: user.username,
-      displayName: user.displayName,
-      avatarUrl: user.avatarUrl,
-    })),
-    videos: videos.map((video) => ({
-      id: video.id,
-      description: video.description,
-      thumbnailUrl: resolveThumbnailUrl(video),
-      likeCount: video.likeCount,
-    })),
+    users: [],
+    videos: videos.map(mapVideo),
   };
 }
 

@@ -102,7 +102,103 @@ export async function createAnnouncement(params: {
   isActive: boolean;
 }) {
   const prisma = getPrismaClient();
-  return prisma.announcement.create({ data: params });
+  return prisma.announcement.create({
+    data: {
+      ...params,
+      publishedAt: params.publishedAt ?? (params.isActive ? new Date() : undefined),
+    },
+  });
+}
+
+/** Fan-out an announcement into each active user's inbox (`notifications`). */
+export async function fanOutAnnouncementToInbox(params: {
+  title: string;
+  body: string;
+}): Promise<number> {
+  const prisma = getPrismaClient();
+  const users = await prisma.user.findMany({
+    where: { status: "ACTIVE", deletedAt: null },
+    select: { id: true },
+  });
+
+  if (users.length === 0) {
+    return 0;
+  }
+
+  const result = await prisma.notification.createMany({
+    data: users.map((user) => ({
+      userId: user.id,
+      type: "ANNOUNCEMENT",
+      title: params.title,
+      body: params.body,
+      isRead: false,
+    })),
+  });
+
+  return result.count;
+}
+
+export async function findAnnouncementById(id: string) {
+  const prisma = getPrismaClient();
+  return prisma.announcement.findUnique({ where: { id } });
+}
+
+export async function updateAnnouncement(
+  id: string,
+  data: {
+    title?: string;
+    body?: string;
+    publishedAt?: Date | null;
+    isActive?: boolean;
+  },
+) {
+  const prisma = getPrismaClient();
+  return prisma.announcement.update({
+    where: { id },
+    data,
+  });
+}
+
+export async function deleteAnnouncement(id: string): Promise<void> {
+  const prisma = getPrismaClient();
+  await prisma.announcement.delete({ where: { id } });
+}
+
+/** Keep inbox copies in sync when an announcement title/body changes. */
+export async function updateAnnouncementInboxCopies(params: {
+  previousTitle: string;
+  previousBody: string;
+  title: string;
+  body: string;
+}): Promise<number> {
+  const prisma = getPrismaClient();
+  const result = await prisma.notification.updateMany({
+    where: {
+      type: "ANNOUNCEMENT",
+      title: params.previousTitle,
+      body: params.previousBody,
+    },
+    data: {
+      title: params.title,
+      body: params.body,
+    },
+  });
+  return result.count;
+}
+
+export async function deleteAnnouncementInboxCopies(params: {
+  title: string;
+  body: string;
+}): Promise<number> {
+  const prisma = getPrismaClient();
+  const result = await prisma.notification.deleteMany({
+    where: {
+      type: "ANNOUNCEMENT",
+      title: params.title,
+      body: params.body,
+    },
+  });
+  return result.count;
 }
 
 export async function getAnalyticsSnapshot(): Promise<{

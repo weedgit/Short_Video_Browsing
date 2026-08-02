@@ -103,7 +103,11 @@ interface ProfileApi {
 
 interface DiscoverApi {
     @GET("v1/discover")
-    suspend fun discover(@Query("q") query: String? = null): ApiEnvelope<DiscoverResponseDto>
+    suspend fun discover(
+        @Query("q") query: String? = null,
+        @Query("tab") tab: String = "videos",
+        @Query("limit") limit: Int = 20,
+    ): ApiEnvelope<DiscoverResponseDto>
 }
 
 interface InboxApi {

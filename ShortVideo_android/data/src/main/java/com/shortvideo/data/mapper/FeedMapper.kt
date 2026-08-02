@@ -2,12 +2,14 @@ package com.shortvideo.data.mapper
 
 import com.shortvideo.data.remote.dto.CommentDto
 import com.shortvideo.data.remote.dto.DiscoverHashtagDto
+import com.shortvideo.data.remote.dto.DiscoverVideoDto
 import com.shortvideo.data.remote.dto.FeedPageDto
 import com.shortvideo.data.remote.dto.FeedVideoDto
 import com.shortvideo.data.remote.dto.InboxNotificationDto
 import com.shortvideo.data.remote.dto.ProfileVideoItemDto
 import com.shortvideo.data.remote.dto.UserProfileDto
 import com.shortvideo.domain.model.DiscoverHashtag
+import com.shortvideo.domain.model.DiscoverVideo
 import com.shortvideo.domain.model.FeedPage
 import com.shortvideo.domain.model.FeedVideo
 import com.shortvideo.domain.model.InboxNotification
@@ -103,6 +105,17 @@ fun ProfileVideoItemDto.toDomain(): ProfileVideoItem =
 
 fun DiscoverHashtagDto.toDomain(): DiscoverHashtag =
     DiscoverHashtag(tag = tag, videoCount = videoCount)
+
+fun DiscoverVideoDto.toDomain(): DiscoverVideo =
+    DiscoverVideo(
+        id = id,
+        description = description,
+        thumbnailUrl = thumbnailUrl,
+        likeCount = likeCount,
+        authorId = authorId,
+        authorName = authorName,
+        authorAvatarUrl = authorAvatarUrl,
+    )
 
 fun InboxNotificationDto.toDomain(): InboxNotification =
     InboxNotification(

@@ -179,7 +179,7 @@ export const getMySavedVideosHandler = asyncHandler(async (req: Request, res: Re
 
 export const getDiscoverHandler = asyncHandler(async (req: Request, res: Response) => {
   const query = parseQuery(discoverQuerySchema, req.query);
-  const result = await discover(query);
+  const result = await discover(query, req.userId);
   sendData(res, result);
 });
 

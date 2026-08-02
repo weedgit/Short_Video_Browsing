@@ -1,8 +1,9 @@
 package com.shortvideo.domain.repository
 
 import com.shortvideo.domain.model.DiscoverHashtag
+import com.shortvideo.domain.model.DiscoverTab
+import com.shortvideo.domain.model.DiscoverVideo
 import com.shortvideo.domain.model.FeedPage
-import com.shortvideo.domain.model.FeedVideo
 import com.shortvideo.domain.model.InboxNotification
 import com.shortvideo.domain.model.ProfileVideoItem
 import com.shortvideo.domain.model.UserProfile
@@ -38,13 +39,13 @@ interface ProfileRepository {
 }
 
 interface DiscoverRepository {
-    suspend fun search(query: String?): DiscoverResult
+    suspend fun search(query: String?, tab: DiscoverTab = DiscoverTab.VIDEOS): DiscoverResult
 }
 
 data class DiscoverResult(
     val hashtags: List<DiscoverHashtag>,
     val users: List<UserProfile>,
-    val videos: List<FeedVideo>,
+    val videos: List<DiscoverVideo>,
 )
 
 interface InboxRepository {

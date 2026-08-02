@@ -74,6 +74,22 @@ data class DiscoverHashtag(
     val videoCount: Long,
 )
 
+data class DiscoverVideo(
+    val id: String,
+    val description: String,
+    val thumbnailUrl: String? = null,
+    val likeCount: Long = 0,
+    val authorId: String? = null,
+    val authorName: String = "",
+    val authorAvatarUrl: String? = null,
+)
+
+enum class DiscoverTab(val apiValue: String) {
+    VIDEOS("videos"),
+    USERS("users"),
+    FRIENDS("friends"),
+}
+
 data class InboxNotification(
     val id: String,
     val type: String,

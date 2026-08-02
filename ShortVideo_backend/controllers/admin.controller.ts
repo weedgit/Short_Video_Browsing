@@ -3,11 +3,13 @@ import { AppError } from "../middleware/errorHandler";
 import { asyncHandler } from "../utils/asyncHandler";
 import {
   createAnnouncement,
+  deleteAnnouncement,
   getAnalytics,
   listAnnouncements,
   listReports,
   listUsers,
   listVideos,
+  updateAnnouncement,
   updateReport,
   updateUser,
   updateVideoStatus,
@@ -15,6 +17,7 @@ import {
 import {
   adminCreateAnnouncementSchema,
   adminReportsQuerySchema,
+  adminUpdateAnnouncementSchema,
   adminUpdateReportSchema,
   adminUpdateUserSchema,
   adminUpdateVideoSchema,
@@ -107,6 +110,19 @@ export const postAdminAnnouncementHandler = asyncHandler(async (req: Request, re
   const body = parseBody(adminCreateAnnouncementSchema, req.body);
   const announcement = await createAnnouncement(req.userId, body);
   sendData(res, announcement, 201);
+});
+
+export const patchAdminAnnouncementHandler = asyncHandler(async (req: Request, res: Response) => {
+  const id = requireParam(req.params.id, "id");
+  const body = parseBody(adminUpdateAnnouncementSchema, req.body);
+  const announcement = await updateAnnouncement(id, body);
+  sendData(res, announcement);
+});
+
+export const deleteAdminAnnouncementHandler = asyncHandler(async (req: Request, res: Response) => {
+  const id = requireParam(req.params.id, "id");
+  await deleteAnnouncement(id);
+  sendData(res, { success: true });
 });
 
 export const getAdminAnalyticsHandler = asyncHandler(async (_req: Request, res: Response) => {

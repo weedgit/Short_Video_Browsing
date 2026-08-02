@@ -41,6 +41,22 @@ export const adminCreateAnnouncementSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
+export const adminUpdateAnnouncementSchema = z
+  .object({
+    title: z.string().trim().min(1, "title is required.").max(200).optional(),
+    body: z.string().trim().min(1, "body is required.").max(5000).optional(),
+    publishedAt: z.string().datetime().nullable().optional(),
+    isActive: z.boolean().optional(),
+  })
+  .refine(
+    (value) =>
+      value.title !== undefined ||
+      value.body !== undefined ||
+      value.publishedAt !== undefined ||
+      value.isActive !== undefined,
+    { message: "At least one field is required." },
+  );
+
 export type AdminUsersQueryInput = z.output<typeof adminUsersQuerySchema>;
 export type AdminUpdateUserInput = z.output<typeof adminUpdateUserSchema>;
 export type AdminVideosQueryInput = z.output<typeof adminVideosQuerySchema>;
@@ -48,3 +64,4 @@ export type AdminUpdateVideoInput = z.output<typeof adminUpdateVideoSchema>;
 export type AdminReportsQueryInput = z.output<typeof adminReportsQuerySchema>;
 export type AdminUpdateReportInput = z.output<typeof adminUpdateReportSchema>;
 export type AdminCreateAnnouncementInput = z.output<typeof adminCreateAnnouncementSchema>;
+export type AdminUpdateAnnouncementInput = z.output<typeof adminUpdateAnnouncementSchema>;

@@ -151,6 +151,22 @@ export function createAnnouncement(data: {
   });
 }
 
+export function updateAnnouncement(
+  id: string,
+  data: Partial<{ title: string; body: string; isActive: boolean }>,
+): Promise<AdminAnnouncement> {
+  return request<AdminAnnouncement>(`/v1/admin/announcements/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteAnnouncement(id: string): Promise<{ success: boolean }> {
+  return request<{ success: boolean }>(`/v1/admin/announcements/${id}`, {
+    method: "DELETE",
+  });
+}
+
 // ---------- Analytics ----------
 
 export function fetchAnalytics(): Promise<AdminAnalytics> {

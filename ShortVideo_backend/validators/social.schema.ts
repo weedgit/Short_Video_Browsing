@@ -12,6 +12,7 @@ export const commentsQuerySchema = z.object({
 
 export const discoverQuerySchema = z.object({
   q: z.string().trim().max(100).optional(),
+  tab: z.enum(["videos", "users", "friends"]).default("videos"),
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
 

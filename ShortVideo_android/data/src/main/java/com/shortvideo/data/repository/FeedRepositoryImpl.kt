@@ -13,6 +13,7 @@ import com.shortvideo.data.remote.dto.PlaybackEventRequestDto
 import com.shortvideo.data.remote.dto.RegisterDeviceRequestDto
 import com.shortvideo.data.remote.dto.UpdateProfileRequestDto
 import com.shortvideo.data.source.MockFeedDataSource
+import com.shortvideo.domain.model.DiscoverTab
 import com.shortvideo.domain.model.FeedPage
 import com.shortvideo.domain.model.InboxNotification
 import com.shortvideo.domain.model.PlaybackEvent
@@ -184,25 +185,13 @@ class ProfileRepositoryImpl @Inject constructor(
 class DiscoverRepositoryImpl @Inject constructor(
     private val discoverApi: DiscoverApi,
 ) : DiscoverRepository {
-    override suspend fun search(query: String?): DiscoverResult {
-        return try {
-            val data = discoverApi.discover(query).data
-            DiscoverResult(
-                hashtags = data?.hashtags?.map { it.toDomain() }.orEmpty(),
-                users = data?.users?.map { it.toDomain() }.orEmpty(),
-                videos = data?.videos?.map { it.toDomain() }.orEmpty(),
-            )
-        } catch (_: Exception) {
-            DiscoverResult(
-                hashtags = listOf(
-                    com.shortvideo.domain.model.DiscoverHashtag("#shortvideo", 120),
-                    com.shortvideo.domain.model.DiscoverHashtag("#foryou", 98),
-                    com.shortvideo.domain.model.DiscoverHashtag("#dance", 76),
-                ),
-                users = emptyList(),
-                videos = MockFeedDataSource.getVideos().take(6),
-            )
-        }
+    override suspend fun search(query: String?, tab: DiscoverTab): DiscoverResult {
+        val data = discoverApi.discover(query = query, tab = tab.apiValue).data
+        return DiscoverResult(
+            hashtags = data?.hashtags?.map { it.toDomain() }.orEmpty(),
+            users = data?.users?.map { it.toDomain() }.orEmpty(),
+            videos = data?.videos?.map { it.toDomain() }.orEmpty(),
+        )
     }
 }
 

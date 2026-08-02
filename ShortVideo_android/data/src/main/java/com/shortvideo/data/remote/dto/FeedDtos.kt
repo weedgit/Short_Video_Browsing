@@ -110,10 +110,20 @@ data class DiscoverHashtagDto(
     @SerializedName("videoCount") val videoCount: Long,
 )
 
+data class DiscoverVideoDto(
+    @SerializedName("id") val id: String,
+    @SerializedName("description") val description: String = "",
+    @SerializedName("thumbnailUrl") val thumbnailUrl: String? = null,
+    @SerializedName("likeCount") val likeCount: Long = 0,
+    @SerializedName("authorId") val authorId: String? = null,
+    @SerializedName("authorName") val authorName: String = "",
+    @SerializedName("authorAvatarUrl") val authorAvatarUrl: String? = null,
+)
+
 data class DiscoverResponseDto(
-    @SerializedName("hashtags") val hashtags: List<DiscoverHashtagDto>,
+    @SerializedName("hashtags") val hashtags: List<DiscoverHashtagDto> = emptyList(),
     @SerializedName("users") val users: List<UserProfileDto> = emptyList(),
-    @SerializedName("videos") val videos: List<FeedVideoDto> = emptyList(),
+    @SerializedName("videos") val videos: List<DiscoverVideoDto> = emptyList(),
 )
 
 data class InboxNotificationDto(

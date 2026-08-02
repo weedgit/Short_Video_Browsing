@@ -1,10 +1,12 @@
 import { Router } from "express";
 import {
+  deleteAdminAnnouncementHandler,
   getAdminAnalyticsHandler,
   getAdminAnnouncementsHandler,
   getAdminReportsHandler,
   getAdminUsersHandler,
   getAdminVideosHandler,
+  patchAdminAnnouncementHandler,
   patchAdminReportHandler,
   patchAdminUserHandler,
   patchAdminVideoHandler,
@@ -22,6 +24,8 @@ export function createAdminRouter(): Router {
   router.patch("/reports/:id", patchAdminReportHandler);
   router.get("/announcements", getAdminAnnouncementsHandler);
   router.post("/announcements", postAdminAnnouncementHandler);
+  router.patch("/announcements/:id", patchAdminAnnouncementHandler);
+  router.delete("/announcements/:id", deleteAdminAnnouncementHandler);
   router.get("/analytics", getAdminAnalyticsHandler);
 
   return router;

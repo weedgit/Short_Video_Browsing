@@ -71,6 +71,8 @@ export type DiscoverUser = {
   username: string;
   displayName: string;
   avatarUrl: string | null;
+  followerCount?: number;
+  isFollowing?: boolean;
 };
 
 export type DiscoverVideo = {
@@ -78,6 +80,9 @@ export type DiscoverVideo = {
   description: string;
   thumbnailUrl: string | null;
   likeCount: number;
+  authorId: string | null;
+  authorName: string;
+  authorAvatarUrl: string | null;
 };
 
 export type DiscoverResult = {

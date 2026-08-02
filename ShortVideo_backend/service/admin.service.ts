@@ -1,11 +1,17 @@
 import { AppError } from "../middleware/errorHandler";
 import {
   createAnnouncement as createAnnouncementRepo,
+  deleteAnnouncement as deleteAnnouncementRepo,
+  deleteAnnouncementInboxCopies,
+  fanOutAnnouncementToInbox,
+  findAnnouncementById,
   findAnnouncements,
   findReportsPage,
   findUsersPage,
   findVideosPage,
   getAnalyticsSnapshot,
+  updateAnnouncement as updateAnnouncementRepo,
+  updateAnnouncementInboxCopies,
   updateReportStatus as updateReportStatusRepo,
   updateUserAdminFields,
   updateVideoStatus as updateVideoStatusRepo,
@@ -23,6 +29,7 @@ import { decodeFeedCursor, encodeFeedCursor } from "../utils/feedCursor";
 import type {
   AdminCreateAnnouncementInput,
   AdminReportsQueryInput,
+  AdminUpdateAnnouncementInput,
   AdminUpdateReportInput,
   AdminUpdateUserInput,
   AdminUpdateVideoInput,
@@ -153,6 +160,26 @@ export async function listAnnouncements(): Promise<AdminAnnouncement[]> {
   }));
 }
 
+function mapAnnouncement(announcement: {
+  id: string;
+  title: string;
+  body: string;
+  isActive: boolean;
+  publishedAt: Date | null;
+  createdAt: Date;
+  createdById: string | null;
+}): AdminAnnouncement {
+  return {
+    id: announcement.id,
+    title: announcement.title,
+    body: announcement.body,
+    isActive: announcement.isActive,
+    publishedAt: announcement.publishedAt ? announcement.publishedAt.toISOString() : null,
+    createdAt: announcement.createdAt.toISOString(),
+    createdById: announcement.createdById,
+  };
+}
+
 export async function createAnnouncement(
   createdById: string,
   input: AdminCreateAnnouncementInput,
@@ -165,15 +192,89 @@ export async function createAnnouncement(
     isActive: input.isActive,
   });
 
-  return {
-    id: announcement.id,
-    title: announcement.title,
-    body: announcement.body,
-    isActive: announcement.isActive,
-    publishedAt: announcement.publishedAt ? announcement.publishedAt.toISOString() : null,
-    createdAt: announcement.createdAt.toISOString(),
-    createdById: announcement.createdById,
-  };
+  // Phone Inbox reads `/v1/inbox` (notifications), not the admin announcements table.
+  if (announcement.isActive) {
+    await fanOutAnnouncementToInbox({
+      title: announcement.title,
+      body: announcement.body,
+    });
+  }
+
+  return mapAnnouncement(announcement);
+}
+
+export async function updateAnnouncement(
+  id: string,
+  input: AdminUpdateAnnouncementInput,
+): Promise<AdminAnnouncement> {
+  const existing = await findAnnouncementById(id);
+  if (!existing) {
+    throw new AppError(404, "ANNOUNCEMENT_NOT_FOUND", "Announcement not found.");
+  }
+
+  const nextTitle = input.title ?? existing.title;
+  const nextBody = input.body ?? existing.body;
+  const nextIsActive = input.isActive ?? existing.isActive;
+  const nextPublishedAt =
+    input.publishedAt === undefined
+      ? existing.publishedAt
+      : input.publishedAt
+        ? new Date(input.publishedAt)
+        : null;
+
+  const wasInactive = !existing.isActive;
+  const becameActive = wasInactive && nextIsActive;
+
+  const announcement = await updateAnnouncementRepo(id, {
+    title: input.title,
+    body: input.body,
+    isActive: input.isActive,
+    publishedAt:
+      input.publishedAt !== undefined
+        ? nextPublishedAt
+        : becameActive && !existing.publishedAt
+          ? new Date()
+          : undefined,
+  });
+
+  const becameInactive = existing.isActive && !nextIsActive;
+
+  if (becameInactive) {
+    await deleteAnnouncementInboxCopies({
+      title: existing.title,
+      body: existing.body,
+    });
+  } else if (nextTitle !== existing.title || nextBody !== existing.body) {
+    await updateAnnouncementInboxCopies({
+      previousTitle: existing.title,
+      previousBody: existing.body,
+      title: nextTitle,
+      body: nextBody,
+    });
+  }
+
+  // Newly activated announcements should appear in inboxes.
+  if (becameActive) {
+    await fanOutAnnouncementToInbox({
+      title: nextTitle,
+      body: nextBody,
+    });
+  }
+
+  return mapAnnouncement(announcement);
+}
+
+export async function deleteAnnouncement(id: string): Promise<void> {
+  const existing = await findAnnouncementById(id);
+  if (!existing) {
+    throw new AppError(404, "ANNOUNCEMENT_NOT_FOUND", "Announcement not found.");
+  }
+
+  await deleteAnnouncementInboxCopies({
+    title: existing.title,
+    body: existing.body,
+  });
+  await deleteAnnouncementRepo(id);
 }
 
 export async function getAnalytics(): Promise<AdminAnalytics> {

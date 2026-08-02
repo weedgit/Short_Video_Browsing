@@ -366,7 +366,43 @@ export async function searchUsers(query: string, limit: number) {
       ],
     },
     take: limit,
+    orderBy: { createdAt: "desc" },
   });
+}
+
+export async function listFollowingUsers(followerId: string, limit: number) {
+  const prisma = getPrismaClient();
+  const rows = await prisma.follow.findMany({
+    where: {
+      followerId,
+      following: { deletedAt: null, status: "ACTIVE" },
+    },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+    include: { following: true },
+  });
+  return rows.map((row) => row.following);
+}
+
+export async function searchFollowingUsers(followerId: string, query: string, limit: number) {
+  const prisma = getPrismaClient();
+  const rows = await prisma.follow.findMany({
+    where: {
+      followerId,
+      following: {
+        deletedAt: null,
+        status: "ACTIVE",
+        OR: [
+          { username: { contains: query, mode: "insensitive" } },
+          { displayName: { contains: query, mode: "insensitive" } },
+        ],
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+    include: { following: true },
+  });
+  return rows.map((row) => row.following);
 }
 
 export async function searchHashtags(query: string, limit: number) {
@@ -393,6 +429,7 @@ export async function searchVideos(query: string, limit: number) {
       deletedAt: null,
       description: { contains: query, mode: "insensitive" },
     },
+    include: { user: true },
     orderBy: { likeCount: "desc" },
     take: limit,
   });
@@ -402,6 +439,7 @@ export async function findTrendingVideos(limit: number) {
   const prisma = getPrismaClient();
   return prisma.video.findMany({
     where: { status: "READY", deletedAt: null },
+    include: { user: true },
     orderBy: { likeCount: "desc" },
     take: limit,
   });
