@@ -15,6 +15,8 @@ import {
   findTrendingHashtags,
   findTrendingVideos,
   findUserPublicProfile,
+  findLikedVideos as findLikedVideosRepo,
+  findSavedVideos as findSavedVideosRepo,
   findUserVideos as findUserVideosRepo,
   findVideoOwner,
   followUser as followUserRepo,
@@ -300,6 +302,54 @@ export async function listUserVideos(
     hasMore && last ? encodeFeedCursor({ createdAt: last.createdAt.toISOString(), id: last.id }) : null;
 
   return { items, nextCursor, hasMore };
+}
+
+function mapInteractionVideoPage(
+  rows: Array<{
+    id: string;
+    thumbnailUrl: string | null;
+    streamUrl: string | null;
+    hlsUrl: string | null;
+    cloudflareAssetId: string | null;
+    likeCount: number;
+    durationMs: number;
+    createdAt: Date;
+    cursorId: string;
+  }>,
+  limit: number,
+): UserVideosPage {
+  const hasMore = rows.length > limit;
+  const page = hasMore ? rows.slice(0, limit) : rows;
+  const items = page.map((video) => ({
+    id: video.id,
+    thumbnailUrl: resolveThumbnailUrl(video),
+    likeCount: video.likeCount,
+    durationMs: video.durationMs,
+  }));
+  const last = page.at(-1);
+  const nextCursor =
+    hasMore && last
+      ? encodeFeedCursor({ createdAt: last.createdAt.toISOString(), id: last.cursorId })
+      : null;
+  return { items, nextCursor, hasMore };
+}
+
+export async function listLikedVideos(
+  userId: string,
+  query: UserVideosQueryInput,
+): Promise<UserVideosPage> {
+  const cursor = decodeCursorSafe(query.cursor);
+  const rows = await findLikedVideosRepo(userId, query.limit + 1, cursor);
+  return mapInteractionVideoPage(rows, query.limit);
+}
+
+export async function listSavedVideos(
+  userId: string,
+  query: UserVideosQueryInput,
+): Promise<UserVideosPage> {
+  const cursor = decodeCursorSafe(query.cursor);
+  const rows = await findSavedVideosRepo(userId, query.limit + 1, cursor);
+  return mapInteractionVideoPage(rows, query.limit);
 }
 
 export async function discover(query: DiscoverQueryInput): Promise<DiscoverResult> {

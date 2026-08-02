@@ -10,7 +10,9 @@ import {
   deleteSaveVideoHandler,
   getDiscoverHandler,
   getInboxHandler,
+  getMyLikedVideosHandler,
   getMyProfileHandler,
+  getMySavedVideosHandler,
   getUserProfileHandler,
   getUserVideosHandler,
   getVideoCommentsHandler,
@@ -68,6 +70,8 @@ export function createSocialUserRouter(): Router {
   // NOTE: literal routes must be registered before the ":userId" wildcard routes.
   router.get("/me/profile", authenticate, getMyProfileHandler);
   router.patch("/me/profile", authenticate, patchMyProfileHandler);
+  router.get("/me/liked", authenticate, getMyLikedVideosHandler);
+  router.get("/me/saved", authenticate, getMySavedVideosHandler);
   router.post(
     "/me/avatar",
     authenticate,

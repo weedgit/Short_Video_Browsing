@@ -66,6 +66,7 @@ fun UserProfileDto.toDomain(): UserProfile =
         followerCount = followerCount,
         followingCount = followingCount,
         videoCount = videoCount,
+        likeCount = likeCount,
         isFollowing = isFollowing,
         isSelf = isSelf || isMe,
     )

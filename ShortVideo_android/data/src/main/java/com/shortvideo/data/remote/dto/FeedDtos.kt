@@ -82,6 +82,7 @@ data class UserProfileDto(
     @SerializedName("followerCount") val followerCount: Long = 0,
     @SerializedName("followingCount") val followingCount: Long = 0,
     @SerializedName("videoCount") val videoCount: Long = 0,
+    @SerializedName("likeCount") val likeCount: Long = 0,
     @SerializedName("isFollowing") val isFollowing: Boolean = false,
     @SerializedName("isSelf") val isSelf: Boolean = false,
     @SerializedName("isMe") val isMe: Boolean = false,

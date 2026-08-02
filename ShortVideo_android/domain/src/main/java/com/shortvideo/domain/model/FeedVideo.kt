@@ -53,6 +53,7 @@ data class UserProfile(
     val followerCount: Long = 0,
     val followingCount: Long = 0,
     val videoCount: Long = 0,
+    val likeCount: Long = 0,
     val isFollowing: Boolean = false,
     val isSelf: Boolean = false,
 )

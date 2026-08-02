@@ -148,6 +148,12 @@ class ProfileRepositoryImpl @Inject constructor(
     override suspend fun getProfileVideos(userId: String): List<ProfileVideoItem> =
         profileApi.getProfileVideos(userId).data?.items?.map { it.toDomain() }.orEmpty()
 
+    override suspend fun getMyLikedVideos(): List<ProfileVideoItem> =
+        profileApi.getMyLikedVideos().data?.items?.map { it.toDomain() }.orEmpty()
+
+    override suspend fun getMySavedVideos(): List<ProfileVideoItem> =
+        profileApi.getMySavedVideos().data?.items?.map { it.toDomain() }.orEmpty()
+
     override suspend fun updateMyProfile(displayName: String?, bio: String?): UserProfile =
         profileApi.updateMyProfile(
             UpdateProfileRequestDto(

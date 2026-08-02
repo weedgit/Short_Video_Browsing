@@ -9,6 +9,8 @@ import {
   getUserProfile,
   likeVideo,
   listComments,
+  listLikedVideos,
+  listSavedVideos,
   listUserVideos,
   markAllInboxRead,
   markInboxItemRead,
@@ -160,6 +162,18 @@ export const getUserVideosHandler = asyncHandler(async (req: Request, res: Respo
   const userId = requireParam(req.params.userId, "userId");
   const query = parseQuery(userVideosQuerySchema, req.query);
   const page = await listUserVideos(userId, query);
+  sendData(res, page);
+});
+
+export const getMyLikedVideosHandler = asyncHandler(async (req: Request, res: Response) => {
+  const query = parseQuery(userVideosQuerySchema, req.query);
+  const page = await listLikedVideos(requireUserId(req), query);
+  sendData(res, page);
+});
+
+export const getMySavedVideosHandler = asyncHandler(async (req: Request, res: Response) => {
+  const query = parseQuery(userVideosQuerySchema, req.query);
+  const page = await listSavedVideos(requireUserId(req), query);
   sendData(res, page);
 });
 

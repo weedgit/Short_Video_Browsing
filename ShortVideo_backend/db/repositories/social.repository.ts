@@ -240,6 +240,72 @@ export async function findUserVideos(userId: string, limit: number, cursor?: Cur
   });
 }
 
+export async function findLikedVideos(userId: string, limit: number, cursor?: CursorParam) {
+  const prisma = getPrismaClient();
+  const rows = await prisma.videoLike.findMany({
+    where: {
+      userId,
+      video: { status: "READY", deletedAt: null },
+      ...(cursor
+        ? {
+            OR: [
+              { createdAt: { lt: cursor.createdAt } },
+              { createdAt: cursor.createdAt, id: { lt: cursor.id } },
+            ],
+          }
+        : {}),
+    },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: limit,
+    include: { video: true },
+  });
+
+  return rows.map((row) => ({
+    id: row.video.id,
+    thumbnailUrl: row.video.thumbnailUrl,
+    streamUrl: row.video.streamUrl,
+    hlsUrl: row.video.hlsUrl,
+    cloudflareAssetId: row.video.cloudflareAssetId,
+    likeCount: row.video.likeCount,
+    durationMs: row.video.durationMs,
+    createdAt: row.createdAt,
+    cursorId: row.id,
+  }));
+}
+
+export async function findSavedVideos(userId: string, limit: number, cursor?: CursorParam) {
+  const prisma = getPrismaClient();
+  const rows = await prisma.videoSave.findMany({
+    where: {
+      userId,
+      video: { status: "READY", deletedAt: null },
+      ...(cursor
+        ? {
+            OR: [
+              { createdAt: { lt: cursor.createdAt } },
+              { createdAt: cursor.createdAt, id: { lt: cursor.id } },
+            ],
+          }
+        : {}),
+    },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: limit,
+    include: { video: true },
+  });
+
+  return rows.map((row) => ({
+    id: row.video.id,
+    thumbnailUrl: row.video.thumbnailUrl,
+    streamUrl: row.video.streamUrl,
+    hlsUrl: row.video.hlsUrl,
+    cloudflareAssetId: row.video.cloudflareAssetId,
+    likeCount: row.video.likeCount,
+    durationMs: row.video.durationMs,
+    createdAt: row.createdAt,
+    cursorId: row.id,
+  }));
+}
+
 // ---------- Discover / search ----------
 
 export async function searchUsers(query: string, limit: number) {

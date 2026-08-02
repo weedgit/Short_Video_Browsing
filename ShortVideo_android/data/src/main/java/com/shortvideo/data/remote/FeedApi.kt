@@ -89,6 +89,16 @@ interface ProfileApi {
 
     @GET("v1/users/{userId}/videos")
     suspend fun getProfileVideos(@Path("userId") userId: String): ApiEnvelope<ProfileVideosDto>
+
+    @GET("v1/users/me/liked")
+    suspend fun getMyLikedVideos(
+        @Query("limit") limit: Int = 30,
+    ): ApiEnvelope<ProfileVideosDto>
+
+    @GET("v1/users/me/saved")
+    suspend fun getMySavedVideos(
+        @Query("limit") limit: Int = 30,
+    ): ApiEnvelope<ProfileVideosDto>
 }
 
 interface DiscoverApi {
