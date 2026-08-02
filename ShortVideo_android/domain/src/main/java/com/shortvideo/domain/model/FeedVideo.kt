@@ -67,7 +67,37 @@ data class ProfileVideoItem(
     val thumbnailUrl: String?,
     val likeCount: Long,
     val durationMs: Long,
-)
+    val streamUrl: String? = null,
+    val playbackFormat: String = "mp4",
+    val description: String = "",
+    val category: String? = null,
+    val commentCount: Long = 0,
+    val shareCount: Long = 0,
+    val musicLabel: String? = null,
+    val hashtags: List<String> = emptyList(),
+) {
+    fun toFeedVideo(author: UserProfile): FeedVideo? {
+        val url = streamUrl?.takeIf { it.isNotBlank() } ?: return null
+        return FeedVideo(
+            id = id,
+            streamUrl = url,
+            authorName = author.displayName,
+            description = description,
+            hashtags = hashtags,
+            category = category,
+            uploadedAtLabel = "",
+            durationMs = durationMs,
+            playbackFormat = playbackFormat,
+            thumbnailUrl = thumbnailUrl,
+            authorId = author.id,
+            authorAvatarUrl = author.avatarUrl,
+            likeCount = likeCount,
+            commentCount = commentCount,
+            shareCount = shareCount,
+            musicLabel = musicLabel,
+        )
+    }
+}
 
 data class DiscoverHashtag(
     val tag: String,

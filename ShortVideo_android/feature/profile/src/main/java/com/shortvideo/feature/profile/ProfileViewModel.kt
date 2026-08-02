@@ -32,6 +32,8 @@ data class ProfileUiState(
     val liked: List<ProfileVideoItem> = emptyList(),
     val errorMessage: String? = null,
     val isOtherProfile: Boolean = false,
+    val viewerVideoId: String? = null,
+    val isMuted: Boolean = false,
 ) {
     val currentGridItems: List<ProfileVideoItem>
         get() = when (selectedTab) {
@@ -202,6 +204,22 @@ class ProfileViewModel @Inject constructor(
                     }
                 }
         }
+    }
+
+    fun openVideoViewer(videoId: String) {
+        val playable = _uiState.value.currentGridItems.any {
+            it.id == videoId && !it.streamUrl.isNullOrBlank()
+        }
+        if (!playable) return
+        _uiState.update { it.copy(viewerVideoId = videoId) }
+    }
+
+    fun closeVideoViewer() {
+        _uiState.update { it.copy(viewerVideoId = null) }
+    }
+
+    fun onToggleMute() {
+        _uiState.update { it.copy(isMuted = !it.isMuted) }
     }
 
     fun toggleFollow() {

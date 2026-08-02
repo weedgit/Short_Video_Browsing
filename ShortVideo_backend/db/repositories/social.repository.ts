@@ -283,6 +283,7 @@ export async function findUserVideos(userId: string, limit: number, cursor?: Cur
     },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take: limit,
+    include: { hashtags: true },
   });
 }
 
@@ -314,6 +315,12 @@ export async function findLikedVideos(userId: string, limit: number, cursor?: Cu
     cloudflareAssetId: row.video.cloudflareAssetId,
     likeCount: row.video.likeCount,
     durationMs: row.video.durationMs,
+    description: row.video.description,
+    category: row.video.category,
+    commentCount: row.video.commentCount,
+    shareCount: row.video.shareCount,
+    musicLabel: row.video.musicLabel,
+    hashtags: [] as string[],
     createdAt: row.createdAt,
     cursorId: row.id,
   }));
@@ -347,6 +354,12 @@ export async function findSavedVideos(userId: string, limit: number, cursor?: Cu
     cloudflareAssetId: row.video.cloudflareAssetId,
     likeCount: row.video.likeCount,
     durationMs: row.video.durationMs,
+    description: row.video.description,
+    category: row.video.category,
+    commentCount: row.video.commentCount,
+    shareCount: row.video.shareCount,
+    musicLabel: row.video.musicLabel,
+    hashtags: [] as string[],
     createdAt: row.createdAt,
     cursorId: row.id,
   }));

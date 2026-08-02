@@ -41,7 +41,7 @@ import { ensureActiveAnnouncementsForUser } from "../db/repositories/admin.repos
 import { findFcmTokensForUser, upsertFcmToken } from "../db/repositories/userDevice.repository";
 import { findUserById, updateUserProfileFields } from "../db/repositories/user.repository";
 import { sendPushNotification } from "../integrations/push";
-import { resolveThumbnailUrl } from "../integrations/cloudflare";
+import { resolveSignedPlaybackUrl, resolveThumbnailUrl } from "../integrations/cloudflare";
 import type {
   CommentItem,
   CommentsPage,
@@ -52,6 +52,7 @@ import type {
   ReportResult,
   SaveToggleResult,
   UserProfile,
+  UserVideoSummary,
   UserVideosPage,
 } from "../models/social.types";
 import { decodeFeedCursor, encodeFeedCursor } from "../utils/feedCursor";
@@ -339,6 +340,52 @@ export async function updateMyAvatarUrl(
   return getUserProfile(userId, userId);
 }
 
+function toUserVideoSummary(video: {
+  id: string;
+  thumbnailUrl?: string | null;
+  streamUrl?: string | null;
+  hlsUrl?: string | null;
+  cloudflareAssetId?: string | null;
+  likeCount: number;
+  durationMs: number;
+  description?: string | null;
+  category?: string | null;
+  commentCount?: number;
+  shareCount?: number;
+  musicLabel?: string | null;
+  hashtags?: Array<{ tag: string }> | string[];
+}): UserVideoSummary | null {
+  let signed;
+  try {
+    signed = resolveSignedPlaybackUrl({
+      cloudflareAssetId: video.cloudflareAssetId,
+      hlsUrl: video.hlsUrl,
+      streamUrl: video.streamUrl,
+    });
+  } catch {
+    return null;
+  }
+
+  const hashtags = (video.hashtags ?? []).map((entry) =>
+    typeof entry === "string" ? entry : entry.tag,
+  );
+
+  return {
+    id: video.id,
+    thumbnailUrl: resolveThumbnailUrl(video),
+    likeCount: video.likeCount,
+    durationMs: video.durationMs,
+    streamUrl: signed.url,
+    playbackFormat: signed.format,
+    description: video.description ?? "",
+    category: video.category ?? null,
+    commentCount: video.commentCount ?? 0,
+    shareCount: video.shareCount ?? 0,
+    musicLabel: video.musicLabel ?? null,
+    hashtags,
+  };
+}
+
 export async function listUserVideos(
   targetUserId: string,
   query: UserVideosQueryInput,
@@ -348,12 +395,9 @@ export async function listUserVideos(
   const hasMore = rows.length > query.limit;
   const page = hasMore ? rows.slice(0, query.limit) : rows;
 
-  const items = page.map((video) => ({
-    id: video.id,
-    thumbnailUrl: resolveThumbnailUrl(video),
-    likeCount: video.likeCount,
-    durationMs: video.durationMs,
-  }));
+  const items = page
+    .map((video) => toUserVideoSummary(video))
+    .filter((item): item is UserVideoSummary => item != null);
 
   const last = page.at(-1);
   const nextCursor =
@@ -371,6 +415,12 @@ function mapInteractionVideoPage(
     cloudflareAssetId: string | null;
     likeCount: number;
     durationMs: number;
+    description: string;
+    category: string | null;
+    commentCount: number;
+    shareCount: number;
+    musicLabel: string | null;
+    hashtags: string[];
     createdAt: Date;
     cursorId: string;
   }>,
@@ -378,12 +428,9 @@ function mapInteractionVideoPage(
 ): UserVideosPage {
   const hasMore = rows.length > limit;
   const page = hasMore ? rows.slice(0, limit) : rows;
-  const items = page.map((video) => ({
-    id: video.id,
-    thumbnailUrl: resolveThumbnailUrl(video),
-    likeCount: video.likeCount,
-    durationMs: video.durationMs,
-  }));
+  const items = page
+    .map((video) => toUserVideoSummary(video))
+    .filter((item): item is UserVideoSummary => item != null);
   const last = page.at(-1);
   const nextCursor =
     hasMore && last

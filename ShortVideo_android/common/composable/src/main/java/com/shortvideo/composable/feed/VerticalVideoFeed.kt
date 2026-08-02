@@ -67,6 +67,8 @@ fun VerticalVideoFeed(
     onLoadComments: (FeedVideo) -> Unit = {},
     onFirstFrame: (FeedVideo, Long) -> Unit = { _, _ -> },
     onAvatarClick: (FeedVideo) -> Unit = {},
+    initialPage: Int = 0,
+    showTopTabs: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     if (videos.isEmpty()) return
@@ -77,7 +79,11 @@ fun VerticalVideoFeed(
         onDispose { playerPool.releaseAll() }
     }
 
-    val pagerState = rememberPagerState(pageCount = { videos.size })
+    val startPage = initialPage.coerceIn(0, videos.lastIndex)
+    val pagerState = rememberPagerState(
+        initialPage = startPage,
+        pageCount = { videos.size },
+    )
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
     val directionThresholdPx = with(density) { 16.dp.toPx() }
@@ -276,14 +282,16 @@ fun VerticalVideoFeed(
             }
         }
 
-        FeedTopTabs(
-            selectedTab = selectedTab,
-            onTabSelected = onTabSelected,
-            onSearchClick = onSearchClick,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth(),
-        )
+        if (showTopTabs) {
+            FeedTopTabs(
+                selectedTab = selectedTab,
+                onTabSelected = onTabSelected,
+                onSearchClick = onSearchClick,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth(),
+            )
+        }
 
         showCommentsFor?.let { video ->
             CommentBottomSheet(

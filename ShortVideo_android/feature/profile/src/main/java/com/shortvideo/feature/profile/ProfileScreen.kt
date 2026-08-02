@@ -1,5 +1,6 @@
 package com.shortvideo.feature.profile
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.PlayArrow
@@ -50,15 +52,21 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.media3.common.util.UnstableApi
 import coil.compose.AsyncImage
+import com.shortvideo.composable.feed.VerticalVideoFeed
 import com.shortvideo.composable.feed.formatCount
+import com.shortvideo.domain.model.FeedVideo
 import com.shortvideo.domain.model.ProfileVideoItem
 import com.shortvideo.domain.model.UserProfile
 import com.shortvideo.theme.PrimaryColor
 import com.shortvideo.theme.SubTextColor
 
+@OptIn(UnstableApi::class)
 @Composable
 fun ProfileScreen(
     onNavigateToSettings: () -> Unit,
@@ -110,7 +118,76 @@ fun ProfileScreen(
         onNavigateBack = onNavigateBack,
         onFollowToggle = viewModel::toggleFollow,
         onSelectTab = viewModel::selectTab,
+        onVideoClick = viewModel::openVideoViewer,
     )
+
+    val viewerVideoId = uiState.viewerVideoId
+    if (viewerVideoId != null) {
+        val feedVideos = uiState.currentGridItems.mapNotNull { it.toFeedVideo(profile) }
+        val startIndex = feedVideos.indexOfFirst { it.id == viewerVideoId }.coerceAtLeast(0)
+
+        if (feedVideos.isNotEmpty()) {
+            ProfileVideoViewerDialog(
+                videos = feedVideos,
+                startIndex = startIndex,
+                isMuted = uiState.isMuted,
+                onToggleMute = viewModel::onToggleMute,
+                onClose = viewModel::closeVideoViewer,
+            )
+        }
+    }
+}
+
+@OptIn(UnstableApi::class)
+@Composable
+private fun ProfileVideoViewerDialog(
+    videos: List<FeedVideo>,
+    startIndex: Int,
+    isMuted: Boolean,
+    onToggleMute: () -> Unit,
+    onClose: () -> Unit,
+) {
+    BackHandler(onBack = onClose)
+    Dialog(
+        onDismissRequest = onClose,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false,
+            dismissOnBackPress = true,
+            dismissOnClickOutside = false,
+        ),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black),
+        ) {
+            VerticalVideoFeed(
+                videos = videos,
+                isMuted = isMuted,
+                resumePositionsMs = emptyMap(),
+                onToggleMute = onToggleMute,
+                onNearEnd = {},
+                onActiveVideoChanged = { _, _ -> },
+                onVideoStarted = {},
+                initialPage = startIndex,
+                showTopTabs = false,
+                modifier = Modifier.fillMaxSize(),
+            )
+            IconButton(
+                onClick = onClose,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(top = 40.dp, start = 8.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Close,
+                    contentDescription = "Close",
+                    tint = Color.White,
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -124,6 +201,7 @@ private fun ProfileContent(
     onNavigateBack: (() -> Unit)?,
     onFollowToggle: () -> Unit,
     onSelectTab: (ProfileTab) -> Unit,
+    onVideoClick: (String) -> Unit,
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
@@ -180,7 +258,10 @@ private fun ProfileContent(
             }
         } else {
             items(gridItems, key = { "${selectedTab.name}-${it.id}" }) { video ->
-                ProfileVideoCell(video = video)
+                ProfileVideoCell(
+                    video = video,
+                    onClick = { onVideoClick(video.id) },
+                )
             }
         }
     }
@@ -425,12 +506,15 @@ private fun ProfileTabItem(
 }
 
 @Composable
-private fun ProfileVideoCell(video: ProfileVideoItem) {
+private fun ProfileVideoCell(
+    video: ProfileVideoItem,
+    onClick: () -> Unit,
+) {
     Box(
         modifier = Modifier
             .aspectRatio(9f / 16f)
             .background(Color(0xFF111111))
-            .clickable { },
+            .clickable(onClick = onClick),
     ) {
         AsyncImage(
             model = video.thumbnailUrl ?: video.id,

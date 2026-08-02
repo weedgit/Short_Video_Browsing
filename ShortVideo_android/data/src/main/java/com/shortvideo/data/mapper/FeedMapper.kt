@@ -101,6 +101,14 @@ fun ProfileVideoItemDto.toDomain(): ProfileVideoItem =
         thumbnailUrl = thumbnailUrl,
         likeCount = likeCount,
         durationMs = durationMs,
+        streamUrl = streamUrl,
+        playbackFormat = playbackFormat ?: "mp4",
+        description = description.orEmpty(),
+        category = category,
+        commentCount = commentCount,
+        shareCount = shareCount,
+        musicLabel = musicLabel,
+        hashtags = hashtags,
     )
 
 fun DiscoverHashtagDto.toDomain(): DiscoverHashtag =

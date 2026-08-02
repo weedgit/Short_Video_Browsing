@@ -53,6 +53,14 @@ export type UserVideoSummary = {
   thumbnailUrl: string | null;
   likeCount: number;
   durationMs: number;
+  streamUrl: string;
+  playbackFormat: "hls" | "mp4";
+  description: string;
+  category: string | null;
+  commentCount: number;
+  shareCount: number;
+  musicLabel: string | null;
+  hashtags: string[];
 };
 
 export type UserVideosPage = {
