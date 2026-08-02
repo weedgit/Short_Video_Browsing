@@ -297,7 +297,7 @@ async function createSocialGraph(users: User[], videos: Awaited<ReturnType<typeo
     },
   });
 
-  await prisma.announcement.create({
+  const welcome = await prisma.announcement.create({
     data: {
       title: "Welcome to local demo",
       body: "This announcement was seeded for admin/inbox testing. No Alibaba Cloud keys required.",
@@ -306,6 +306,24 @@ async function createSocialGraph(users: User[], videos: Awaited<ReturnType<typeo
       isActive: true,
     },
   });
+
+  // Inbox reads notifications — fan out so seeded announcements show on phones.
+  const activeUsers = await prisma.user.findMany({
+    where: { status: "ACTIVE", deletedAt: null },
+    select: { id: true },
+  });
+  if (activeUsers.length > 0) {
+    await prisma.notification.createMany({
+      data: activeUsers.map((user) => ({
+        userId: user.id,
+        type: "ANNOUNCEMENT",
+        title: welcome.title,
+        body: welcome.body,
+        isRead: false,
+        createdAt: welcome.publishedAt ?? welcome.createdAt,
+      })),
+    });
+  }
 
   return { likeCount, commentCount, followCount: followPairs.length };
 }

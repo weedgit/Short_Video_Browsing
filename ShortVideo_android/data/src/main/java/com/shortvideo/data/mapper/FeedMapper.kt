@@ -124,7 +124,8 @@ fun InboxNotificationDto.toDomain(): InboxNotification =
         title = title,
         body = body,
         isRead = isRead,
-        createdAtLabel = createdAtLabel,
+        createdAtLabel = createdAtLabel?.takeIf { it.isNotBlank() }
+            ?: formatRelativeTime(createdAt),
         videoId = videoId,
         actorUserId = actorUserId,
     )

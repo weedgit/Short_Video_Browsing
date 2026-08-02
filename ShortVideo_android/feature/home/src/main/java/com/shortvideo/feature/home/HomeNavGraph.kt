@@ -66,6 +66,7 @@ fun HomeScreen(
                     onShareClick = viewModel::onShareClick,
                     onLoadComments = viewModel::onLoadComments,
                     onSubmitComment = viewModel::onSubmitComment,
+                    onReportComment = viewModel::onReportComment,
                     onFirstFrame = viewModel::onFirstFrame,
                     onAvatarClick = { video ->
                         val authorId = video.authorId

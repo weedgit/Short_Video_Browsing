@@ -69,6 +69,12 @@ data class CreateCommentRequestDto(
     @SerializedName("parentId") val parentId: String? = null,
 )
 
+data class CreateReportRequestDto(
+    @SerializedName("targetType") val targetType: String,
+    @SerializedName("targetId") val targetId: String,
+    @SerializedName("reason") val reason: String,
+)
+
 data class LikeResponseDto(
     @SerializedName("liked") val liked: Boolean,
     @SerializedName("likeCount") val likeCount: Long,
@@ -132,7 +138,8 @@ data class InboxNotificationDto(
     @SerializedName("title") val title: String,
     @SerializedName("body") val body: String,
     @SerializedName("isRead") val isRead: Boolean,
-    @SerializedName("createdAtLabel") val createdAtLabel: String,
+    @SerializedName("createdAt") val createdAt: String? = null,
+    @SerializedName("createdAtLabel") val createdAtLabel: String? = null,
     @SerializedName("videoId") val videoId: String? = null,
     @SerializedName("actorUserId") val actorUserId: String? = null,
 )

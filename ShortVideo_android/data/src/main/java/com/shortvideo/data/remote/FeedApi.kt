@@ -4,6 +4,7 @@ import com.shortvideo.data.remote.dto.ApiEnvelope
 import com.shortvideo.data.remote.dto.CommentDto
 import com.shortvideo.data.remote.dto.CommentListDto
 import com.shortvideo.data.remote.dto.CreateCommentRequestDto
+import com.shortvideo.data.remote.dto.CreateReportRequestDto
 import com.shortvideo.data.remote.dto.DiscoverResponseDto
 import com.shortvideo.data.remote.dto.FeedPageDto
 import com.shortvideo.data.remote.dto.FollowResponseDto
@@ -67,6 +68,11 @@ interface SocialApi {
 
     @DELETE("v1/videos/{videoId}/save")
     suspend fun unsaveVideo(@Path("videoId") videoId: String): ApiEnvelope<Map<String, Boolean>>
+
+    @POST("v1/reports")
+    suspend fun submitReport(
+        @Body body: CreateReportRequestDto,
+    ): ApiEnvelope<Map<String, Any?>>
 }
 
 interface ProfileApi {

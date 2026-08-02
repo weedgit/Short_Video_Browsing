@@ -36,7 +36,10 @@ data class UploadUiState(
     val step: UploadStep = UploadStep.SOURCE,
     val selectedVideo: VideoFileInfo? = null,
     val description: String = "",
-    val hashtagsText: String = "",
+    /** Selected hashtags including leading '#'. Max [MAX_HASHTAGS]. */
+    val selectedHashtags: List<String> = emptyList(),
+    /** Draft text for adding a custom hashtag. */
+    val hashtagDraft: String = "",
     val category: String = "",
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
@@ -46,6 +49,23 @@ data class UploadUiState(
     val fileSizeBytes: Long = 0,
     val showMobileDataDialog: Boolean = false,
     val pendingPublish: PublishVideoRequest? = null,
+)
+
+internal const val MAX_HASHTAGS = 10
+
+internal val SUGGESTED_HASHTAGS = listOf(
+    "#fun",
+    "#dance",
+    "#food",
+    "#travel",
+    "#pets",
+    "#tech",
+    "#comedy",
+    "#music",
+    "#sports",
+    "#fashion",
+    "#gaming",
+    "#diy",
 )
 
 @HiltViewModel
@@ -129,8 +149,59 @@ class UploadViewModel @Inject constructor(
         _uiState.update { it.copy(description = value, errorMessage = null) }
     }
 
-    fun onHashtagsChanged(value: String) {
-        _uiState.update { it.copy(hashtagsText = value, errorMessage = null) }
+    fun onHashtagDraftChanged(value: String) {
+        _uiState.update { it.copy(hashtagDraft = value, errorMessage = null) }
+    }
+
+    fun onToggleHashtag(tag: String) {
+        val normalized = normalizeHashtag(tag) ?: return
+        _uiState.update { state ->
+            val selected = state.selectedHashtags.toMutableList()
+            if (selected.any { it.equals(normalized, ignoreCase = true) }) {
+                selected.removeAll { it.equals(normalized, ignoreCase = true) }
+                state.copy(selectedHashtags = selected, errorMessage = null)
+            } else if (selected.size >= MAX_HASHTAGS) {
+                state.copy(errorMessage = "You can select up to $MAX_HASHTAGS hashtags.")
+            } else {
+                selected.add(normalized)
+                state.copy(selectedHashtags = selected, errorMessage = null)
+            }
+        }
+    }
+
+    fun onAddHashtagDraft() {
+        val parsed = parseHashtags(_uiState.value.hashtagDraft)
+        if (parsed.isEmpty()) {
+            _uiState.update { it.copy(errorMessage = "Enter a hashtag to add.") }
+            return
+        }
+        _uiState.update { state ->
+            val selected = state.selectedHashtags.toMutableList()
+            for (tag in parsed) {
+                if (selected.size >= MAX_HASHTAGS) {
+                    return@update state.copy(
+                        selectedHashtags = selected,
+                        hashtagDraft = "",
+                        errorMessage = "You can select up to $MAX_HASHTAGS hashtags.",
+                    )
+                }
+                if (selected.none { it.equals(tag, ignoreCase = true) }) {
+                    selected.add(tag)
+                }
+            }
+            state.copy(selectedHashtags = selected, hashtagDraft = "", errorMessage = null)
+        }
+    }
+
+    fun onRemoveHashtag(tag: String) {
+        _uiState.update { state ->
+            state.copy(
+                selectedHashtags = state.selectedHashtags.filterNot {
+                    it.equals(tag, ignoreCase = true)
+                },
+                errorMessage = null,
+            )
+        }
     }
 
     fun onCategoryChanged(value: String) {
@@ -153,9 +224,15 @@ class UploadViewModel @Inject constructor(
             return
         }
 
+        // Flush any draft text so typing without tapping Add still counts.
+        val draftTags = parseHashtags(_uiState.value.hashtagDraft)
+        val hashtags = (_uiState.value.selectedHashtags + draftTags)
+            .distinctBy { it.lowercase() }
+            .take(MAX_HASHTAGS)
+
         val publish = PublishVideoRequest(
             description = _uiState.value.description.trim(),
-            hashtags = parseHashtags(_uiState.value.hashtagsText),
+            hashtags = hashtags,
             category = _uiState.value.category.trim().ifBlank { null },
         )
 
@@ -240,9 +317,15 @@ class UploadViewModel @Inject constructor(
     }
 
     private fun parseHashtags(raw: String): List<String> =
-        raw.split(",", " ", "#")
-            .map { it.trim() }
-            .filter { it.isNotBlank() }
-            .map { tag -> if (tag.startsWith("#")) tag else "#$tag" }
-            .distinct()
+        raw.split(',', ' ', '\n', '\t', '#')
+            .mapNotNull { normalizeHashtag(it) }
+            .distinctBy { it.lowercase() }
+
+    private fun normalizeHashtag(raw: String): String? {
+        val trimmed = raw.trim().removePrefix("#").trim()
+        if (trimmed.isBlank()) return null
+        val cleaned = trimmed.filter { it.isLetterOrDigit() || it == '_' }
+        if (cleaned.isBlank()) return null
+        return "#$cleaned"
+    }
 }

@@ -16,6 +16,7 @@ data class InboxUiState(
     val isLoading: Boolean = true,
     val notifications: List<InboxNotification> = emptyList(),
     val unreadCount: Int = 0,
+    val errorMessage: String? = null,
 )
 
 @HiltViewModel
@@ -31,7 +32,7 @@ class InboxViewModel @Inject constructor(
 
     fun refresh() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             runCatching { inboxRepository.getNotifications() }
                 .onSuccess { (items, unread) ->
                     _uiState.update {
@@ -39,11 +40,17 @@ class InboxViewModel @Inject constructor(
                             isLoading = false,
                             notifications = items,
                             unreadCount = unread,
+                            errorMessage = null,
                         )
                     }
                 }
-                .onFailure {
-                    _uiState.update { it.copy(isLoading = false) }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.message ?: "Unable to load inbox",
+                        )
+                    }
                 }
         }
     }

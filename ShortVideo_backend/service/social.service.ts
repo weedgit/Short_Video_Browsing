@@ -37,6 +37,7 @@ import {
   unlikeVideo as unlikeVideoRepo,
   unsaveVideo as unsaveVideoRepo,
 } from "../db/repositories/social.repository";
+import { ensureActiveAnnouncementsForUser } from "../db/repositories/admin.repository";
 import { findFcmTokensForUser, upsertFcmToken } from "../db/repositories/userDevice.repository";
 import { findUserById, updateUserProfileFields } from "../db/repositories/user.repository";
 import { sendPushNotification } from "../integrations/push";
@@ -514,6 +515,10 @@ export async function discover(
 }
 
 export async function getInbox(userId: string, query: InboxQueryInput): Promise<InboxPage> {
+  // Active admin announcements live in `announcements`; Inbox reads `notifications`.
+  // Sync any missing copies for this user (seed / older creates).
+  await ensureActiveAnnouncementsForUser(userId);
+
   const cursor = decodeCursorSafe(query.cursor);
   const [rows, unreadCount] = await Promise.all([
     findNotificationsForUser(userId, query.limit + 1, cursor),

@@ -67,7 +67,14 @@ fun InboxScreen(
                     contentAlignment = Alignment.Center,
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("No notifications yet")
+                        Text(
+                            text = uiState.errorMessage ?: "No notifications yet",
+                            color = if (uiState.errorMessage != null) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
+                        )
                         Button(
                             onClick = viewModel::refresh,
                             modifier = Modifier.padding(top = 12.dp),

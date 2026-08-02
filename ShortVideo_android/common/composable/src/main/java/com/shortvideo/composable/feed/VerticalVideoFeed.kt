@@ -63,6 +63,7 @@ fun VerticalVideoFeed(
     onShareClick: (FeedVideo) -> Unit = {},
     onCommentClick: (FeedVideo) -> Unit = {},
     onSubmitComment: (FeedVideo, String, String?) -> Unit = { _, _, _ -> },
+    onReportComment: (commentId: String, reason: String) -> Unit = { _, _ -> },
     onLoadComments: (FeedVideo) -> Unit = {},
     onFirstFrame: (FeedVideo, Long) -> Unit = { _, _ -> },
     onAvatarClick: (FeedVideo) -> Unit = {},
@@ -290,6 +291,7 @@ fun VerticalVideoFeed(
                 comments = commentsForActive,
                 onDismiss = { showCommentsFor = null },
                 onSubmit = { text, parentId -> onSubmitComment(video, text, parentId) },
+                onReport = { comment, reason -> onReportComment(comment.id, reason) },
             )
         }
     }

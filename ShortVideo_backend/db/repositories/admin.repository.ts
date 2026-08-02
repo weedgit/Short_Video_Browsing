@@ -114,6 +114,7 @@ export async function createAnnouncement(params: {
 export async function fanOutAnnouncementToInbox(params: {
   title: string;
   body: string;
+  createdAt?: Date;
 }): Promise<number> {
   const prisma = getPrismaClient();
   const users = await prisma.user.findMany({
@@ -132,9 +133,47 @@ export async function fanOutAnnouncementToInbox(params: {
       title: params.title,
       body: params.body,
       isRead: false,
+      ...(params.createdAt ? { createdAt: params.createdAt } : {}),
     })),
   });
 
+  return result.count;
+}
+
+/**
+ * Ensure every active announcement appears in this user's inbox.
+ * Covers seed data and announcements created before fan-out existed.
+ */
+export async function ensureActiveAnnouncementsForUser(userId: string): Promise<number> {
+  const prisma = getPrismaClient();
+  const active = await prisma.announcement.findMany({
+    where: { isActive: true },
+    select: { title: true, body: true, publishedAt: true, createdAt: true },
+  });
+  if (active.length === 0) {
+    return 0;
+  }
+
+  const existing = await prisma.notification.findMany({
+    where: { userId, type: "ANNOUNCEMENT" },
+    select: { title: true, body: true },
+  });
+  const existingKeys = new Set(existing.map((row) => `${row.title}\n${row.body}`));
+  const missing = active.filter((row) => !existingKeys.has(`${row.title}\n${row.body}`));
+  if (missing.length === 0) {
+    return 0;
+  }
+
+  const result = await prisma.notification.createMany({
+    data: missing.map((row) => ({
+      userId,
+      type: "ANNOUNCEMENT",
+      title: row.title,
+      body: row.body,
+      isRead: false,
+      createdAt: row.publishedAt ?? row.createdAt,
+    })),
+  });
   return result.count;
 }
 

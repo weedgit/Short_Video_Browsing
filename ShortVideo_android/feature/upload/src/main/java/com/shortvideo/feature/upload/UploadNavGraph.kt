@@ -8,11 +8,18 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -20,6 +27,9 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.InputChip
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -85,12 +95,17 @@ fun UploadScreen(
         )
         UploadStep.PUBLISH -> UploadPublishStep(
             description = uiState.description,
-            hashtagsText = uiState.hashtagsText,
+            selectedHashtags = uiState.selectedHashtags,
+            hashtagDraft = uiState.hashtagDraft,
+            suggestedHashtags = SUGGESTED_HASHTAGS,
             category = uiState.category,
             isLoading = uiState.isLoading,
             errorMessage = uiState.errorMessage,
             onDescriptionChanged = viewModel::onDescriptionChanged,
-            onHashtagsChanged = viewModel::onHashtagsChanged,
+            onHashtagDraftChanged = viewModel::onHashtagDraftChanged,
+            onToggleHashtag = viewModel::onToggleHashtag,
+            onAddHashtagDraft = viewModel::onAddHashtagDraft,
+            onRemoveHashtag = viewModel::onRemoveHashtag,
             onCategoryChanged = viewModel::onCategoryChanged,
             onPublish = viewModel::onPublishClicked,
             onBack = { viewModel.onPreviewConfirmed() },
@@ -258,25 +273,29 @@ private fun UploadPreviewStep(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun UploadPublishStep(
     description: String,
-    hashtagsText: String,
+    selectedHashtags: List<String>,
+    hashtagDraft: String,
+    suggestedHashtags: List<String>,
     category: String,
     isLoading: Boolean,
     errorMessage: String?,
     onDescriptionChanged: (String) -> Unit,
-    onHashtagsChanged: (String) -> Unit,
+    onHashtagDraftChanged: (String) -> Unit,
+    onToggleHashtag: (String) -> Unit,
+    onAddHashtagDraft: () -> Unit,
+    onRemoveHashtag: (String) -> Unit,
     onCategoryChanged: (String) -> Unit,
     onPublish: () -> Unit,
     onBack: () -> Unit,
 ) {
-    var categoryExpanded by remember { mutableStateOf(false) }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -287,45 +306,76 @@ private fun UploadPublishStep(
             label = { Text("Description") },
             modifier = Modifier.fillMaxWidth(),
         )
-        OutlinedTextField(
-            value = hashtagsText,
-            onValueChange = onHashtagsChanged,
-            label = { Text("Hashtags") },
-            placeholder = { Text("#fun #shortvideo") },
-            modifier = Modifier.fillMaxWidth(),
+
+        Text(
+            text = "Hashtags (${selectedHashtags.size}/$MAX_HASHTAGS)",
+            style = MaterialTheme.typography.titleSmall,
         )
-        ExposedDropdownMenuBox(
-            expanded = categoryExpanded,
-            onExpandedChange = { categoryExpanded = !categoryExpanded },
-        ) {
-            OutlinedTextField(
-                value = category,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Category") },
-                placeholder = { Text("Select a category") },
-                trailingIcon = {
-                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded)
-                },
-                modifier = Modifier
-                    .menuAnchor()
-                    .fillMaxWidth(),
-            )
-            ExposedDropdownMenu(
-                expanded = categoryExpanded,
-                onDismissRequest = { categoryExpanded = false },
+        if (selectedHashtags.isNotEmpty()) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                VideoCategories.ALL.forEach { option ->
-                    DropdownMenuItem(
-                        text = { Text(option) },
-                        onClick = {
-                            onCategoryChanged(option)
-                            categoryExpanded = false
+                selectedHashtags.forEach { tag ->
+                    InputChip(
+                        selected = true,
+                        onClick = { onRemoveHashtag(tag) },
+                        label = { Text(tag) },
+                        trailingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.Close,
+                                contentDescription = "Remove $tag",
+                            )
                         },
                     )
                 }
             }
         }
+        Text(
+            text = "Tap to select (you can pick several)",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            suggestedHashtags.forEach { tag ->
+                val selected = selectedHashtags.any { it.equals(tag, ignoreCase = true) }
+                FilterChip(
+                    selected = selected,
+                    onClick = { onToggleHashtag(tag) },
+                    label = { Text(tag) },
+                )
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            OutlinedTextField(
+                value = hashtagDraft,
+                onValueChange = onHashtagDraftChanged,
+                label = { Text("Custom hashtag") },
+                placeholder = { Text("fun dance") },
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+            )
+            Button(
+                onClick = onAddHashtagDraft,
+                enabled = hashtagDraft.isNotBlank(),
+            ) {
+                Text("Add")
+            }
+        }
+
+        OutlinedTextField(
+            value = category,
+            onValueChange = onCategoryChanged,
+            label = { Text("Category") },
+            modifier = Modifier.fillMaxWidth(),
+        )
         errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         Button(
             onClick = onPublish,

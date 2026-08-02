@@ -241,6 +241,12 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun onReportComment(commentId: String, reason: String) {
+        viewModelScope.launch {
+            runCatching { socialRepository.reportComment(commentId, reason) }
+        }
+    }
+
     private fun mergePostedComment(
         comments: List<VideoComment>,
         posted: VideoComment,

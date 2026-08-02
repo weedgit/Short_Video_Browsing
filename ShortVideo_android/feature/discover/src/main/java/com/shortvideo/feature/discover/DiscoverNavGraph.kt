@@ -35,6 +35,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -82,6 +83,20 @@ fun DiscoverScreen(
             placeholder = { Text(searchPlaceholder(uiState.selectedTab)) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             singleLine = true,
+            shape = RoundedCornerShape(50),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = PrimaryColor,
+                unfocusedBorderColor = Color.White.copy(alpha = 0.28f),
+                cursorColor = PrimaryColor,
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                focusedContainerColor = Color(0xFF1C1C1C),
+                unfocusedContainerColor = Color(0xFF1C1C1C),
+                focusedLeadingIconColor = Color.White,
+                unfocusedLeadingIconColor = Color.White.copy(alpha = 0.75f),
+                focusedPlaceholderColor = Color.White.copy(alpha = 0.45f),
+                unfocusedPlaceholderColor = Color.White.copy(alpha = 0.45f),
+            ),
         )
 
         DiscoverTabRow(
@@ -207,58 +222,55 @@ private fun DiscoverVideosContent(
     videos: List<DiscoverVideo>,
     onHashtagClick: (String) -> Unit,
 ) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxSize(),
-    ) {
+    // Keep hashtags pinned above the grid so vertical scroll doesn't fight LazyRow.
+    Column(modifier = Modifier.fillMaxSize()) {
         if (hashtags.isNotEmpty()) {
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                Column {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(top = 12.dp, bottom = 12.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                items(hashtags, key = { it.tag }) { tag ->
                     Text(
-                        text = "Trending hashtags",
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 8.dp),
-                    )
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(hashtags) { tag ->
-                            Text(
-                                text = "${tag.tag} · ${formatCount(tag.videoCount)}",
-                                color = Color.White,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(20.dp))
-                                    .background(PrimaryColor.copy(alpha = 0.85f))
-                                    .clickable { onHashtagClick(tag.tag) }
-                                    .padding(horizontal = 14.dp, vertical = 8.dp),
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Videos",
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+                        text = "${tag.tag} · ${formatCount(tag.videoCount)}",
+                        color = Color.White,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(PrimaryColor.copy(alpha = 0.85f))
+                            .clickable { onHashtagClick(tag.tag) }
+                            .padding(horizontal = 14.dp, vertical = 8.dp),
                     )
                 }
             }
         }
 
-        if (videos.isEmpty()) {
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(48.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(text = "No videos found", color = SubTextColor)
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            contentPadding = PaddingValues(
+                top = if (hashtags.isEmpty()) 12.dp else 0.dp,
+                bottom = 24.dp,
+            ),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+        ) {
+            if (videos.isEmpty()) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(48.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(text = "No videos found", color = SubTextColor)
+                    }
                 }
-            }
-        } else {
-            items(videos, key = { it.id }) { video ->
-                DiscoverVideoCell(video = video)
+            } else {
+                items(videos, key = { it.id }) { video ->
+                    DiscoverVideoCell(video = video)
+                }
             }
         }
     }

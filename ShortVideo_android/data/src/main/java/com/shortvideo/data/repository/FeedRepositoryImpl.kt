@@ -8,6 +8,7 @@ import com.shortvideo.data.remote.InboxApi
 import com.shortvideo.data.remote.ProfileApi
 import com.shortvideo.data.remote.SocialApi
 import com.shortvideo.data.remote.dto.CreateCommentRequestDto
+import com.shortvideo.data.remote.dto.CreateReportRequestDto
 import com.shortvideo.data.remote.dto.PlaybackBatchRequestDto
 import com.shortvideo.data.remote.dto.PlaybackEventRequestDto
 import com.shortvideo.data.remote.dto.RegisterDeviceRequestDto
@@ -141,6 +142,16 @@ class SocialRepositoryImpl @Inject constructor(
 
     override suspend fun unsaveVideo(videoId: String): Boolean =
         socialApi.unsaveVideo(videoId).data?.get("saved") ?: false
+
+    override suspend fun reportComment(commentId: String, reason: String) {
+        socialApi.submitReport(
+            CreateReportRequestDto(
+                targetType = "COMMENT",
+                targetId = commentId,
+                reason = reason,
+            ),
+        )
+    }
 }
 
 @Singleton
@@ -200,12 +211,8 @@ class InboxRepositoryImpl @Inject constructor(
     private val inboxApi: InboxApi,
 ) : InboxRepository {
     override suspend fun getNotifications(): Pair<List<InboxNotification>, Int> {
-        return try {
-            val data = inboxApi.getInbox().data
-            (data?.items?.map { it.toDomain() }.orEmpty()) to (data?.unreadCount ?: 0)
-        } catch (_: Exception) {
-            emptyList<InboxNotification>() to 0
-        }
+        val data = inboxApi.getInbox().data
+        return (data?.items?.map { it.toDomain() }.orEmpty()) to (data?.unreadCount ?: 0)
     }
 
     override suspend fun markRead(id: String) {
