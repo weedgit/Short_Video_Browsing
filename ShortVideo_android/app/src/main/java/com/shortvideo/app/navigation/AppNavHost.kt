@@ -56,6 +56,11 @@ private fun NavGraphBuilder.registerFeatureGraphs(
                 }
             }
         },
+        onAvatarClick = { authorId ->
+            navController.navigate(
+                com.shortvideo.core.DestinationRoute.userProfileRoute(authorId),
+            )
+        },
     )
     discoverNavGraph()
     uploadNavGraph()

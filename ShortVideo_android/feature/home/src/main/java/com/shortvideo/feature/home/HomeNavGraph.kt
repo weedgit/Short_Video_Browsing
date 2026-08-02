@@ -24,6 +24,7 @@ import com.shortvideo.core.DestinationRoute
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     onSearchClick: () -> Unit = {},
+    onAvatarClick: (authorId: String) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -66,6 +67,12 @@ fun HomeScreen(
                     onLoadComments = viewModel::onLoadComments,
                     onSubmitComment = viewModel::onSubmitComment,
                     onFirstFrame = viewModel::onFirstFrame,
+                    onAvatarClick = { video ->
+                        val authorId = video.authorId
+                        if (!authorId.isNullOrBlank()) {
+                            onAvatarClick(authorId)
+                        }
+                    },
                 )
             }
         }
@@ -75,8 +82,12 @@ fun HomeScreen(
 @UnstableApi
 fun NavGraphBuilder.homeNavGraph(
     onSearchClick: () -> Unit = {},
+    onAvatarClick: (authorId: String) -> Unit = {},
 ) {
     composable(DestinationRoute.HOME_ROUTE) {
-        HomeScreen(onSearchClick = onSearchClick)
+        HomeScreen(
+            onSearchClick = onSearchClick,
+            onAvatarClick = onAvatarClick,
+        )
     }
 }

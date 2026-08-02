@@ -62,7 +62,7 @@ fun VerticalVideoFeed(
     onSaveClick: (FeedVideo) -> Unit = {},
     onShareClick: (FeedVideo) -> Unit = {},
     onCommentClick: (FeedVideo) -> Unit = {},
-    onSubmitComment: (FeedVideo, String) -> Unit = { _, _ -> },
+    onSubmitComment: (FeedVideo, String, String?) -> Unit = { _, _, _ -> },
     onLoadComments: (FeedVideo) -> Unit = {},
     onFirstFrame: (FeedVideo, Long) -> Unit = { _, _ -> },
     onAvatarClick: (FeedVideo) -> Unit = {},
@@ -279,7 +279,9 @@ fun VerticalVideoFeed(
             selectedTab = selectedTab,
             onTabSelected = onTabSelected,
             onSearchClick = onSearchClick,
-            modifier = Modifier.align(Alignment.TopCenter),
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth(),
         )
 
         showCommentsFor?.let { video ->
@@ -287,7 +289,7 @@ fun VerticalVideoFeed(
                 commentCount = video.commentCount,
                 comments = commentsForActive,
                 onDismiss = { showCommentsFor = null },
-                onSubmit = { text -> onSubmitComment(video, text) },
+                onSubmit = { text, parentId -> onSubmitComment(video, text, parentId) },
             )
         }
     }

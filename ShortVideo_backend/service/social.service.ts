@@ -7,8 +7,10 @@ import {
   createComment,
   createNotification,
   createReport,
-  findCommentsByVideo,
+  findCommentById,
   findFollowingUserIdsSubset,
+  findRepliesByParentIds,
+  findRootCommentsByVideo,
   findLikedVideoIds,
   findNotificationsForUser,
   findSavedVideoIds,
@@ -38,6 +40,7 @@ import { findUserById, updateUserProfileFields } from "../db/repositories/user.r
 import { sendPushNotification } from "../integrations/push";
 import { resolveThumbnailUrl } from "../integrations/cloudflare";
 import type {
+  CommentItem,
   CommentsPage,
   DiscoverResult,
   FollowToggleResult,
@@ -121,13 +124,16 @@ export async function unlikeVideo(videoId: string, userId: string): Promise<Like
   return { liked: false, likeCount };
 }
 
-export async function listComments(videoId: string, query: CommentsQueryInput): Promise<CommentsPage> {
-  const cursor = decodeCursorSafe(query.cursor);
-  const rows = await findCommentsByVideo(videoId, query.limit + 1, cursor);
-  const hasMore = rows.length > query.limit;
-  const page = hasMore ? rows.slice(0, query.limit) : rows;
+type CommentRow = Awaited<ReturnType<typeof findRootCommentsByVideo>>[number] & {
+  parent?: { user?: { displayName: string } | null } | null;
+};
 
-  const items = page.map((row) => ({
+function toCommentItem(
+  row: CommentRow,
+  replies: CommentItem[] = [],
+  replyToAuthorName: string | null = null,
+): CommentItem {
+  return {
     id: row.id,
     videoId: row.videoId,
     userId: row.userId,
@@ -135,7 +141,38 @@ export async function listComments(videoId: string, query: CommentsQueryInput): 
     authorAvatarUrl: row.user.avatarUrl,
     text: row.text,
     createdAt: row.createdAt.toISOString(),
-  }));
+    parentId: row.parentId ?? null,
+    replyToAuthorName,
+    replyCount: replies.length,
+    replies,
+  };
+}
+
+export async function listComments(videoId: string, query: CommentsQueryInput): Promise<CommentsPage> {
+  const cursor = decodeCursorSafe(query.cursor);
+  const rows = await findRootCommentsByVideo(videoId, query.limit + 1, cursor);
+  const hasMore = rows.length > query.limit;
+  const page = hasMore ? rows.slice(0, query.limit) : rows;
+
+  const replyRows = await findRepliesByParentIds(page.map((row) => row.id));
+  const repliesByParent = new Map<string, CommentItem[]>();
+  for (const reply of replyRows) {
+    const parentId = reply.parentId;
+    if (!parentId) continue;
+    const item = toCommentItem(
+      reply,
+      [],
+      reply.parent?.user?.displayName ?? null,
+    );
+    const list = repliesByParent.get(parentId) ?? [];
+    list.push(item);
+    repliesByParent.set(parentId, list);
+  }
+
+  const items = page.map((row) => {
+    const replies = repliesByParent.get(row.id) ?? [];
+    return toCommentItem(row, replies, null);
+  });
 
   const last = page.at(-1);
   const nextCursor =
@@ -154,28 +191,46 @@ export async function createVideoComment(
     throw new AppError(404, "VIDEO_NOT_FOUND", "Video not found.");
   }
 
-  const comment = await createComment({ videoId, userId, text: input.text });
+  let rootParentId: string | null = null;
+  let replyToAuthorName: string | null = null;
+  let notifyUserId: string | null = video.userId !== userId ? video.userId : null;
 
-  if (video.userId !== userId) {
+  if (input.parentId) {
+    const parent = await findCommentById(input.parentId);
+    if (!parent || parent.videoId !== videoId) {
+      throw new AppError(404, "COMMENT_NOT_FOUND", "Parent comment not found.");
+    }
+    // One-level nesting: replies always attach to the root comment.
+    rootParentId = parent.parentId ?? parent.id;
+    replyToAuthorName = parent.user.displayName;
+    if (parent.userId !== userId) {
+      notifyUserId = parent.userId;
+    }
+  }
+
+  const comment = await createComment({
+    videoId,
+    userId,
+    text: input.text,
+    parentId: rootParentId,
+  });
+
+  if (notifyUserId) {
     await notifyUser({
-      userId: video.userId,
+      userId: notifyUserId,
       type: "COMMENT",
-      title: "New comment",
+      title: rootParentId ? "New reply" : "New comment",
       body: input.text.slice(0, 140),
       videoId,
       actorUserId: userId,
     });
   }
 
-  return {
-    id: comment.id,
-    videoId: comment.videoId,
-    userId: comment.userId,
-    authorName: comment.user.displayName,
-    authorAvatarUrl: comment.user.avatarUrl,
-    text: comment.text,
-    createdAt: comment.createdAt.toISOString(),
-  };
+  return toCommentItem(
+    comment,
+    [],
+    replyToAuthorName,
+  );
 }
 
 export async function followUser(followerId: string, targetUserId: string): Promise<FollowToggleResult> {

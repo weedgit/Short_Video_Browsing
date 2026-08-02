@@ -8,6 +8,8 @@ object DestinationRoute {
     const val UPLOAD_ROUTE = "upload_route"
     const val INBOX_ROUTE = "inbox_route"
     const val PROFILE_ROUTE = "profile_route"
+    const val USER_ID_ARG = "userId"
+    const val USER_PROFILE_ROUTE = "user_profile_route/{$USER_ID_ARG}"
     const val AUTH_ROUTE = "auth_route"
     const val AUTH_LOGIN_ROUTE = "auth_login_route"
     const val AUTH_REGISTER_ROUTE = "auth_register_route"
@@ -17,6 +19,9 @@ object DestinationRoute {
     const val ACCESSIBILITY_ONBOARDING_ROUTE = "accessibility_onboarding_route"
 
     val authRequiredRoutes = setOf(UPLOAD_ROUTE, PROFILE_ROUTE)
+
+    fun userProfileRoute(userId: String): String =
+        "user_profile_route/${Uri.encode(userId)}"
 
     fun authLoginRoute(returnRoute: String? = null): String =
         "$AUTH_LOGIN_ROUTE?$AUTH_RETURN_ROUTE_ARG=${Uri.encode(returnRoute.orEmpty())}"

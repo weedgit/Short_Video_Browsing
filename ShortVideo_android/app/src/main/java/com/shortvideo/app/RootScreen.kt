@@ -89,6 +89,7 @@ fun RootScreen(
         DestinationRoute.DISCOVER_ROUTE,
         DestinationRoute.INBOX_ROUTE,
         DestinationRoute.PROFILE_ROUTE,
+        DestinationRoute.USER_PROFILE_ROUTE,
         null,
     )
 

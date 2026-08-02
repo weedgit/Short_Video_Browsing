@@ -11,6 +11,10 @@ export type CommentItem = {
   authorAvatarUrl: string | null;
   text: string;
   createdAt: string;
+  parentId: string | null;
+  replyToAuthorName: string | null;
+  replyCount: number;
+  replies: CommentItem[];
 };
 
 export type CommentsPage = {

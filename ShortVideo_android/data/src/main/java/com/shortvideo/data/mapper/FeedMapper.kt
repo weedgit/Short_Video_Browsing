@@ -14,6 +14,8 @@ import com.shortvideo.domain.model.InboxNotification
 import com.shortvideo.domain.model.ProfileVideoItem
 import com.shortvideo.domain.model.UserProfile
 import com.shortvideo.domain.model.VideoComment
+import java.time.Duration
+import java.time.Instant
 
 fun FeedPageDto.toDomain(): FeedPage =
     FeedPage(
@@ -53,8 +55,28 @@ fun CommentDto.toDomain(): VideoComment =
         authorName = authorName,
         authorAvatarUrl = authorAvatarUrl,
         text = text,
-        createdAtLabel = createdAtLabel,
+        createdAtLabel = createdAtLabel?.takeIf { it.isNotBlank() }
+            ?: formatRelativeTime(createdAt),
+        parentId = parentId,
+        replyToAuthorName = replyToAuthorName,
+        replyCount = replyCount.coerceAtLeast(replies.size),
+        replies = replies.map { it.toDomain() },
     )
+
+private fun formatRelativeTime(iso: String?): String {
+    if (iso.isNullOrBlank()) return ""
+    return runCatching {
+        val instant = Instant.parse(iso)
+        val seconds = Duration.between(instant, Instant.now()).seconds.coerceAtLeast(0)
+        when {
+            seconds < 60 -> "Just now"
+            seconds < 3600 -> "${seconds / 60}m"
+            seconds < 86400 -> "${seconds / 3600}h"
+            seconds < 604800 -> "${seconds / 86400}d"
+            else -> "${seconds / 604800}w"
+        }
+    }.getOrDefault("")
+}
 
 fun UserProfileDto.toDomain(): UserProfile =
     UserProfile(

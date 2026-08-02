@@ -20,7 +20,7 @@ interface SocialRepository {
     suspend fun likeVideo(videoId: String): Pair<Boolean, Long>
     suspend fun unlikeVideo(videoId: String): Pair<Boolean, Long>
     suspend fun getComments(videoId: String): List<VideoComment>
-    suspend fun postComment(videoId: String, text: String): VideoComment
+    suspend fun postComment(videoId: String, text: String, parentId: String? = null): VideoComment
     suspend fun followUser(userId: String): Boolean
     suspend fun unfollowUser(userId: String): Boolean
     suspend fun saveVideo(videoId: String): Boolean

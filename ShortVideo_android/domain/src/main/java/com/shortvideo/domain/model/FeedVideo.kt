@@ -42,6 +42,10 @@ data class VideoComment(
     val authorAvatarUrl: String? = null,
     val text: String,
     val createdAtLabel: String,
+    val parentId: String? = null,
+    val replyToAuthorName: String? = null,
+    val replyCount: Int = 0,
+    val replies: List<VideoComment> = emptyList(),
 )
 
 data class UserProfile(

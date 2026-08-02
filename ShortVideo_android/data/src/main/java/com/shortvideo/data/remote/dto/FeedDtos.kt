@@ -52,7 +52,12 @@ data class CommentDto(
     @SerializedName("authorName") val authorName: String,
     @SerializedName("authorAvatarUrl") val authorAvatarUrl: String? = null,
     @SerializedName("text") val text: String,
-    @SerializedName("createdAtLabel") val createdAtLabel: String,
+    @SerializedName("createdAt") val createdAt: String? = null,
+    @SerializedName("createdAtLabel") val createdAtLabel: String? = null,
+    @SerializedName("parentId") val parentId: String? = null,
+    @SerializedName("replyToAuthorName") val replyToAuthorName: String? = null,
+    @SerializedName("replyCount") val replyCount: Int = 0,
+    @SerializedName("replies") val replies: List<CommentDto> = emptyList(),
 )
 
 data class CommentListDto(
@@ -61,6 +66,7 @@ data class CommentListDto(
 
 data class CreateCommentRequestDto(
     @SerializedName("text") val text: String,
+    @SerializedName("parentId") val parentId: String? = null,
 )
 
 data class LikeResponseDto(

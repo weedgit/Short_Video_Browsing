@@ -1,5 +1,7 @@
 package com.shortvideo.composable.feed
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -9,13 +11,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -27,9 +36,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.shortvideo.domain.model.VideoComment
 import com.shortvideo.theme.PrimaryColor
 import com.shortvideo.theme.SurfaceElevated
@@ -40,11 +53,13 @@ fun CommentBottomSheet(
     commentCount: Long,
     comments: List<VideoComment>,
     onDismiss: () -> Unit,
-    onSubmit: (String) -> Unit,
+    onSubmit: (text: String, parentId: String?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var draft by remember { mutableStateOf("") }
+    var replyTarget by remember { mutableStateOf<VideoComment?>(null) }
+    var expandedReplyIds by remember { mutableStateOf(setOf<String>()) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -56,7 +71,7 @@ fun CommentBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 320.dp, max = 560.dp)
+                .heightIn(min = 360.dp, max = 620.dp)
                 .padding(horizontal = 16.dp),
         ) {
             Text(
@@ -73,7 +88,7 @@ fun CommentBottomSheet(
                     .weight(1f, fill = true)
                     .fillMaxWidth(),
                 contentPadding = PaddingValues(vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 if (comments.isEmpty()) {
                     item {
@@ -84,25 +99,89 @@ fun CommentBottomSheet(
                     }
                 }
                 items(comments, key = { it.id }) { comment ->
-                    Column {
-                        Text(
-                            text = comment.authorName,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Text(
-                            text = comment.text,
-                            color = Color.White.copy(alpha = 0.9f),
-                            modifier = Modifier.padding(top = 2.dp),
-                        )
-                        Text(
-                            text = comment.createdAtLabel,
-                            color = Color.White.copy(alpha = 0.45f),
-                            modifier = Modifier.padding(top = 4.dp),
+                    val replies = comment.replies
+                    val expanded = expandedReplyIds.contains(comment.id) || replies.size <= 2
+                    CommentRow(
+                        comment = comment,
+                        isReply = false,
+                        onReply = { replyTarget = it },
+                    )
+                    if (replies.isNotEmpty()) {
+                        if (!expanded) {
+                            Text(
+                                text = "View ${replies.size} replies",
+                                color = Color.White.copy(alpha = 0.7f),
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 13.sp,
+                                modifier = Modifier
+                                    .padding(start = 52.dp, top = 6.dp)
+                                    .clickable {
+                                        expandedReplyIds = expandedReplyIds + comment.id
+                                    },
+                            )
+                        } else {
+                            Column(
+                                modifier = Modifier.padding(start = 44.dp, top = 8.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                replies.forEach { reply ->
+                                    CommentRow(
+                                        comment = reply,
+                                        isReply = true,
+                                        onReply = {
+                                            // Reply under the same root thread.
+                                            replyTarget = comment.copy(
+                                                authorName = reply.authorName,
+                                            )
+                                        },
+                                    )
+                                }
+                                if (replies.size > 2) {
+                                    Text(
+                                        text = "Hide replies",
+                                        color = Color.White.copy(alpha = 0.7f),
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 13.sp,
+                                        modifier = Modifier
+                                            .padding(start = 8.dp)
+                                            .clickable {
+                                                expandedReplyIds = expandedReplyIds - comment.id
+                                            },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            replyTarget?.let { target ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "Replying to ${target.authorName}",
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 13.sp,
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(
+                        onClick = { replyTarget = null },
+                        modifier = Modifier.size(28.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Cancel reply",
+                            tint = Color.White.copy(alpha = 0.7f),
+                            modifier = Modifier.size(16.dp),
                         )
                     }
                 }
             }
+
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -114,15 +193,27 @@ fun CommentBottomSheet(
                     value = draft,
                     onValueChange = { draft = it },
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text("Add comment...") },
+                    placeholder = {
+                        Text(
+                            if (replyTarget != null) {
+                                "Reply to ${replyTarget!!.authorName}"
+                            } else {
+                                "Add comment..."
+                            },
+                        )
+                    },
                     singleLine = true,
                 )
                 Button(
                     onClick = {
                         val text = draft.trim()
                         if (text.isNotEmpty()) {
-                            onSubmit(text)
+                            val parentId = replyTarget?.let { target ->
+                                target.parentId ?: target.id
+                            }
+                            onSubmit(text, parentId)
                             draft = ""
+                            replyTarget = null
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor),
@@ -131,6 +222,70 @@ fun CommentBottomSheet(
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
+        }
+    }
+}
+
+@Composable
+private fun CommentRow(
+    comment: VideoComment,
+    isReply: Boolean,
+    onReply: (VideoComment) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        AsyncImage(
+            model = comment.authorAvatarUrl,
+            contentDescription = comment.authorName,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .size(if (isReply) 28.dp else 36.dp)
+                .clip(CircleShape)
+                .background(Color(0xFF2A2A2A)),
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = comment.authorName,
+                color = Color.White.copy(alpha = 0.75f),
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 13.sp,
+            )
+            if (!comment.replyToAuthorName.isNullOrBlank() && isReply) {
+                Text(
+                    text = "Replying to ${comment.replyToAuthorName}",
+                    color = Color.White.copy(alpha = 0.45f),
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(top = 1.dp),
+                )
+            }
+            Text(
+                text = comment.text,
+                color = Color.White.copy(alpha = 0.95f),
+                modifier = Modifier.padding(top = 2.dp),
+                fontSize = 14.sp,
+            )
+            Row(
+                modifier = Modifier.padding(top = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (comment.createdAtLabel.isNotBlank()) {
+                    Text(
+                        text = comment.createdAtLabel,
+                        color = Color.White.copy(alpha = 0.45f),
+                        fontSize = 12.sp,
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                }
+                Text(
+                    text = "Reply",
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 12.sp,
+                    modifier = Modifier.clickable { onReply(comment) },
+                )
+            }
         }
     }
 }

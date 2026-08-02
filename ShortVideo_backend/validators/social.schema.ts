@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const commentCreateSchema = z.object({
   text: z.string().trim().min(1, "Comment text is required.").max(500, "Comment is too long."),
+  parentId: z.string().trim().min(1).optional().nullable(),
 });
 
 export const commentsQuerySchema = z.object({

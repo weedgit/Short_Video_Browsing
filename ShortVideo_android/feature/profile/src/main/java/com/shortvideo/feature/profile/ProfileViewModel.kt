@@ -1,7 +1,9 @@
 package com.shortvideo.feature.profile
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.shortvideo.core.DestinationRoute
 import com.shortvideo.domain.model.ProfileVideoItem
 import com.shortvideo.domain.model.UserProfile
 import com.shortvideo.domain.repository.ProfileRepository
@@ -29,6 +31,7 @@ data class ProfileUiState(
     val favorites: List<ProfileVideoItem> = emptyList(),
     val liked: List<ProfileVideoItem> = emptyList(),
     val errorMessage: String? = null,
+    val isOtherProfile: Boolean = false,
 ) {
     val currentGridItems: List<ProfileVideoItem>
         get() = when (selectedTab) {
@@ -42,8 +45,14 @@ data class ProfileUiState(
 class ProfileViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
     private val socialRepository: SocialRepository,
+    savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(ProfileUiState())
+    private val targetUserId: String? =
+        savedStateHandle.get<String>(DestinationRoute.USER_ID_ARG)?.takeIf { it.isNotBlank() }
+
+    private val _uiState = MutableStateFlow(
+        ProfileUiState(isOtherProfile = targetUserId != null),
+    )
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
     private var favoritesLoaded = false
@@ -55,14 +64,27 @@ class ProfileViewModel @Inject constructor(
 
     fun refresh() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            _uiState.update {
+                it.copy(
+                    isLoading = true,
+                    errorMessage = null,
+                    isOtherProfile = targetUserId != null,
+                )
+            }
             favoritesLoaded = false
             likedLoaded = false
             runCatching {
-                val profile = profileRepository.getMyProfile()
-                val videos = profileRepository.getProfileVideos(profile.id)
-                profile to videos
+                if (targetUserId != null) {
+                    val profile = profileRepository.getProfile(targetUserId)
+                    val videos = profileRepository.getProfileVideos(targetUserId)
+                    profile to videos
+                } else {
+                    val profile = profileRepository.getMyProfile()
+                    val videos = profileRepository.getProfileVideos(profile.id)
+                    profile to videos
+                }
             }.onSuccess { (profile, videos) ->
+                val isOther = targetUserId != null && !profile.isSelf
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -71,6 +93,7 @@ class ProfileViewModel @Inject constructor(
                         favorites = emptyList(),
                         liked = emptyList(),
                         selectedTab = ProfileTab.VIDEOS,
+                        isOtherProfile = isOther,
                     )
                 }
             }.onFailure { error ->
@@ -78,16 +101,21 @@ class ProfileViewModel @Inject constructor(
                     it.copy(
                         isLoading = false,
                         errorMessage = error.message ?: "Unable to load profile",
-                        profile = UserProfile(
-                            id = "me",
-                            username = "you",
-                            displayName = "Your Profile",
-                            bio = "Sign in and upload to populate your grid.",
-                            isSelf = true,
-                        ),
+                        profile = if (targetUserId == null) {
+                            UserProfile(
+                                id = "me",
+                                username = "you",
+                                displayName = "Your Profile",
+                                bio = "Sign in and upload to populate your grid.",
+                                isSelf = true,
+                            )
+                        } else {
+                            null
+                        },
                         videos = emptyList(),
                         favorites = emptyList(),
                         liked = emptyList(),
+                        isOtherProfile = targetUserId != null,
                     )
                 }
             }
@@ -95,6 +123,7 @@ class ProfileViewModel @Inject constructor(
     }
 
     fun selectTab(tab: ProfileTab) {
+        if (_uiState.value.isOtherProfile) return
         if (_uiState.value.selectedTab == tab) return
         val needsLoad = when (tab) {
             ProfileTab.VIDEOS -> false
@@ -110,7 +139,7 @@ class ProfileViewModel @Inject constructor(
     }
 
     private fun loadFavoritesIfNeeded() {
-        if (favoritesLoaded) return
+        if (favoritesLoaded || _uiState.value.isOtherProfile) return
         viewModelScope.launch {
             runCatching { profileRepository.getMySavedVideos() }
                 .onSuccess { items ->
@@ -143,7 +172,7 @@ class ProfileViewModel @Inject constructor(
     }
 
     private fun loadLikedIfNeeded() {
-        if (likedLoaded) return
+        if (likedLoaded || _uiState.value.isOtherProfile) return
         viewModelScope.launch {
             runCatching { profileRepository.getMyLikedVideos() }
                 .onSuccess { items ->

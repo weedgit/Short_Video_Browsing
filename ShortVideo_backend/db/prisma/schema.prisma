@@ -250,14 +250,19 @@ model VideoComment {
   id        String   @id @default(cuid())
   videoId   String   @map("video_id")
   userId    String   @map("user_id")
+  parentId  String?  @map("parent_id")
   text      String
   createdAt DateTime @default(now()) @map("created_at")
 
-  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video   Video         @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent  VideoComment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies VideoComment[] @relation("CommentReplies")
 
   @@index([videoId, createdAt])
+  @@index([videoId, parentId, createdAt])
   @@index([userId])
+  @@index([parentId])
   @@map("video_comments")
 }
 

@@ -199,13 +199,13 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun onSubmitComment(video: FeedVideo, text: String) {
+    fun onSubmitComment(video: FeedVideo, text: String, parentId: String? = null) {
         viewModelScope.launch {
-            runCatching { socialRepository.postComment(video.id, text) }
+            runCatching { socialRepository.postComment(video.id, text, parentId) }
                 .onSuccess { comment ->
                     _uiState.update { state ->
                         state.copy(
-                            comments = state.comments + comment,
+                            comments = mergePostedComment(state.comments, comment, parentId),
                             videos = state.videos.map { item ->
                                 if (item.id == video.id) {
                                     item.copy(commentCount = item.commentCount + 1)
@@ -223,10 +223,11 @@ class HomeViewModel @Inject constructor(
                         authorName = "You",
                         text = text,
                         createdAtLabel = "Just now",
+                        parentId = parentId,
                     )
                     _uiState.update { state ->
                         state.copy(
-                            comments = state.comments + local,
+                            comments = mergePostedComment(state.comments, local, parentId),
                             videos = state.videos.map { item ->
                                 if (item.id == video.id) {
                                     item.copy(commentCount = item.commentCount + 1)
@@ -237,6 +238,25 @@ class HomeViewModel @Inject constructor(
                         )
                     }
                 }
+        }
+    }
+
+    private fun mergePostedComment(
+        comments: List<VideoComment>,
+        posted: VideoComment,
+        parentId: String?,
+    ): List<VideoComment> {
+        if (parentId.isNullOrBlank()) {
+            return listOf(posted) + comments
+        }
+        return comments.map { root ->
+            if (root.id != parentId) root
+            else {
+                root.copy(
+                    replies = root.replies + posted,
+                    replyCount = root.replyCount + 1,
+                )
+            }
         }
     }
 

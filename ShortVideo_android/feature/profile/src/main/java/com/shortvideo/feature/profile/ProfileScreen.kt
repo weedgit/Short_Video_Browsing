@@ -23,10 +23,10 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.PersonAddAlt
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
@@ -36,7 +36,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -63,6 +62,7 @@ import com.shortvideo.theme.SubTextColor
 @Composable
 fun ProfileScreen(
     onNavigateToSettings: () -> Unit,
+    onNavigateBack: (() -> Unit)? = null,
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -89,18 +89,25 @@ fun ProfileScreen(
             Text(uiState.errorMessage ?: "Unable to load profile")
             Spacer(modifier = Modifier.height(12.dp))
             Button(onClick = viewModel::refresh) { Text("Retry") }
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(onClick = onNavigateToSettings) { Text("Account settings") }
+            if (onNavigateBack != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(onClick = onNavigateBack) { Text("Back") }
+            } else {
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(onClick = onNavigateToSettings) { Text("Account settings") }
+            }
         }
         return
     }
 
     ProfileContent(
         profile = profile,
+        isOtherProfile = uiState.isOtherProfile,
         selectedTab = uiState.selectedTab,
         gridItems = uiState.currentGridItems,
         isTabLoading = uiState.isTabLoading,
         onSettings = onNavigateToSettings,
+        onNavigateBack = onNavigateBack,
         onFollowToggle = viewModel::toggleFollow,
         onSelectTab = viewModel::selectTab,
     )
@@ -109,10 +116,12 @@ fun ProfileScreen(
 @Composable
 private fun ProfileContent(
     profile: UserProfile,
+    isOtherProfile: Boolean,
     selectedTab: ProfileTab,
     gridItems: List<ProfileVideoItem>,
     isTabLoading: Boolean,
     onSettings: () -> Unit,
+    onNavigateBack: (() -> Unit)?,
     onFollowToggle: () -> Unit,
     onSelectTab: (ProfileTab) -> Unit,
 ) {
@@ -128,16 +137,24 @@ private fun ProfileContent(
         item(span = { GridItemSpan(maxLineSpan) }) {
             ProfileHeader(
                 profile = profile,
+                isOtherProfile = isOtherProfile,
                 onSettings = onSettings,
+                onNavigateBack = onNavigateBack,
                 onFollowToggle = onFollowToggle,
             )
         }
 
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            ProfileTabRow(
-                selectedTab = selectedTab,
-                onSelectTab = onSelectTab,
-            )
+        if (!isOtherProfile) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                ProfileTabRow(
+                    selectedTab = selectedTab,
+                    onSelectTab = onSelectTab,
+                )
+            }
+        } else {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                HorizontalDivider(color = Color(0xFF2A2A2A), thickness = 0.5.dp)
+            }
         }
 
         if (isTabLoading) {
@@ -157,7 +174,9 @@ private fun ProfileContent(
             }
         } else if (gridItems.isEmpty()) {
             item(span = { GridItemSpan(maxLineSpan) }) {
-                ProfileEmptyTab(selectedTab = selectedTab)
+                ProfileEmptyTab(
+                    selectedTab = if (isOtherProfile) ProfileTab.VIDEOS else selectedTab,
+                )
             }
         } else {
             items(gridItems, key = { "${selectedTab.name}-${it.id}" }) { video ->
@@ -170,7 +189,9 @@ private fun ProfileContent(
 @Composable
 private fun ProfileHeader(
     profile: UserProfile,
+    isOtherProfile: Boolean,
     onSettings: () -> Unit,
+    onNavigateBack: (() -> Unit)?,
     onFollowToggle: () -> Unit,
 ) {
     Column(
@@ -180,22 +201,30 @@ private fun ProfileHeader(
             .padding(horizontal = 16.dp)
             .padding(top = 8.dp, bottom = 12.dp),
     ) {
-        if (profile.isSelf) {
+        if (isOtherProfile && onNavigateBack != null) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(onClick = onSettings) {
+                IconButton(onClick = onNavigateBack) {
                     Icon(
-                        Icons.Default.Settings,
-                        contentDescription = "Settings",
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
                         tint = Color.White,
                     )
                 }
+                Text(
+                    text = "@${profile.username}",
+                    color = Color.White,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
+            Spacer(modifier = Modifier.height(4.dp))
         }
 
-        // Avatar left; display name → username → stats on the right
+        // Avatar left; display name + username (+ gear) → stats on the right
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -205,7 +234,7 @@ private fun ProfileHeader(
                 contentDescription = profile.displayName,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .size(88.dp)
+                    .size(112.dp)
                     .clip(CircleShape)
                     .background(Color(0xFF2A2A2A))
                     .border(1.dp, Color(0xFF3A3A3A), CircleShape),
@@ -214,34 +243,59 @@ private fun ProfileHeader(
             Spacer(modifier = Modifier.width(20.dp))
 
             Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
             ) {
-                Text(
-                    text = profile.displayName,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
-                )
-                Text(
-                    text = "@${profile.username}",
-                    color = SubTextColor,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            text = profile.displayName,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                        )
+                        Text(
+                            text = "@${profile.username}",
+                            color = SubTextColor,
+                            style = MaterialTheme.typography.bodyMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    }
+                    if (profile.isSelf) {
+                        IconButton(
+                            onClick = onSettings,
+                            modifier = Modifier
+                                .align(Alignment.CenterEnd)
+                                .size(36.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.Settings,
+                                contentDescription = "Settings",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                    }
+                }
                 Spacer(modifier = Modifier.height(10.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    horizontalArrangement = Arrangement.Center,
                 ) {
                     ProfileStat(value = profile.followingCount, label = "Following")
+                    Spacer(modifier = Modifier.width(20.dp))
                     ProfileStat(value = profile.followerCount, label = "Followers")
+                    Spacer(modifier = Modifier.width(20.dp))
                     ProfileStat(value = profile.likeCount, label = "Likes")
                 }
             }
@@ -250,68 +304,52 @@ private fun ProfileHeader(
         if (!profile.bio.isNullOrBlank()) {
             Text(
                 text = profile.bio!!,
-                color = Color.White.copy(alpha = 0.88f),
+                color = SubTextColor,
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 14.dp),
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 14.dp),
             )
         }
 
-        if (!profile.isSelf) {
+        if (isOtherProfile) {
             Spacer(modifier = Modifier.height(14.dp))
-            Row(
+            Button(
+                onClick = onFollowToggle,
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                shape = RoundedCornerShape(4.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (profile.isFollowing) Color(0xFF2A2A2A) else PrimaryColor,
+                ),
             ) {
-                Button(
-                    onClick = onFollowToggle,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(4.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (profile.isFollowing) Color(0xFF2A2A2A) else PrimaryColor,
-                    ),
-                ) {
-                    Text(
-                        text = if (profile.isFollowing) "Following" else "Follow",
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
-                OutlinedButton(
-                    onClick = { },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(4.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF3A3A3A)),
-                ) {
-                    Text("Message", fontWeight = FontWeight.SemiBold)
-                }
-                OutlinedButton(
-                    onClick = { },
-                    modifier = Modifier.width(48.dp),
-                    contentPadding = PaddingValues(0.dp),
-                    shape = RoundedCornerShape(4.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF3A3A3A)),
-                ) {
-                    Icon(Icons.Default.PersonAddAlt, contentDescription = null)
-                }
+                Text(
+                    text = if (profile.isFollowing) "Unfollow" else "Follow",
+                    fontWeight = FontWeight.SemiBold,
+                )
             }
         }
     }
 }
 
 @Composable
-private fun ProfileStat(value: Long, label: String) {
+private fun ProfileStat(
+    value: Long,
+    label: String,
+) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = formatCount(value),
             color = Color.White,
             fontWeight = FontWeight.Bold,
             fontSize = 17.sp,
+            textAlign = TextAlign.Center,
         )
         Text(
             text = label,
             color = SubTextColor,
             style = MaterialTheme.typography.labelMedium,
+            textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 2.dp),
         )
     }

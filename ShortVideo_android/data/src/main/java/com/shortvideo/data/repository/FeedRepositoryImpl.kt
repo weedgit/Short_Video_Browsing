@@ -119,8 +119,15 @@ class SocialRepositoryImpl @Inject constructor(
     override suspend fun getComments(videoId: String): List<VideoComment> =
         socialApi.getComments(videoId).data?.items?.map { it.toDomain() }.orEmpty()
 
-    override suspend fun postComment(videoId: String, text: String): VideoComment =
-        socialApi.postComment(videoId, CreateCommentRequestDto(text)).data!!.toDomain()
+    override suspend fun postComment(
+        videoId: String,
+        text: String,
+        parentId: String?,
+    ): VideoComment =
+        socialApi.postComment(
+            videoId,
+            CreateCommentRequestDto(text = text, parentId = parentId),
+        ).data!!.toDomain()
 
     override suspend fun followUser(userId: String): Boolean =
         socialApi.followUser(userId).data?.following ?: true

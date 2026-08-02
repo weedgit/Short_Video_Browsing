@@ -149,12 +149,25 @@ export async function findFollowingUserIdsSubset(
 
 // ---------- Comments ----------
 
-export async function createComment(params: { videoId: string; userId: string; text: string }) {
+export async function createComment(params: {
+  videoId: string;
+  userId: string;
+  text: string;
+  parentId?: string | null;
+}) {
   const prisma = getPrismaClient();
   const [comment] = await prisma.$transaction([
     prisma.videoComment.create({
-      data: params,
-      include: { user: true },
+      data: {
+        videoId: params.videoId,
+        userId: params.userId,
+        text: params.text,
+        parentId: params.parentId ?? null,
+      },
+      include: {
+        user: true,
+        parent: { include: { user: true } },
+      },
     }),
     prisma.video.update({
       where: { id: params.videoId },
@@ -164,7 +177,16 @@ export async function createComment(params: { videoId: string; userId: string; t
   return comment;
 }
 
-export async function findCommentsByVideo(
+export async function findCommentById(commentId: string) {
+  const prisma = getPrismaClient();
+  return prisma.videoComment.findUnique({
+    where: { id: commentId },
+    include: { user: true, parent: true },
+  });
+}
+
+/** Root comments only (parentId is null), newest first. */
+export async function findRootCommentsByVideo(
   videoId: string,
   limit: number,
   cursor?: CursorParam,
@@ -173,6 +195,7 @@ export async function findCommentsByVideo(
   return prisma.videoComment.findMany({
     where: {
       videoId,
+      parentId: null,
       ...(cursor
         ? {
             OR: [
@@ -186,6 +209,29 @@ export async function findCommentsByVideo(
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take: limit,
   });
+}
+
+/** Direct replies for the given root comment ids, oldest first (TikTok thread order). */
+export async function findRepliesByParentIds(parentIds: string[]) {
+  if (parentIds.length === 0) return [];
+  const prisma = getPrismaClient();
+  return prisma.videoComment.findMany({
+    where: { parentId: { in: parentIds } },
+    include: {
+      user: true,
+      parent: { include: { user: true } },
+    },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+  });
+}
+
+/** @deprecated Prefer findRootCommentsByVideo + findRepliesByParentIds */
+export async function findCommentsByVideo(
+  videoId: string,
+  limit: number,
+  cursor?: CursorParam,
+) {
+  return findRootCommentsByVideo(videoId, limit, cursor);
 }
 
 // ---------- Videos / profile ----------
