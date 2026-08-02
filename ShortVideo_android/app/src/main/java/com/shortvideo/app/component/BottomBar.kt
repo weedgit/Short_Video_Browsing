@@ -26,15 +26,14 @@ fun BottomBar(
     currentDestination: NavDestination?,
     isAuthenticated: Boolean,
 ) {
-    val onHome = currentDestination?.route == DestinationRoute.HOME_ROUTE
+    val inactive = Color.White.copy(alpha = 0.55f)
     NavigationBar(
-        containerColor = if (onHome) Black else MaterialThemeSurface(),
+        containerColor = Black,
         contentColor = Color.White,
     ) {
         BottomBarDestination.entries.forEach { destination ->
             val selected = currentDestination?.hierarchy?.any { it.route == destination.route } == true
             val iconSize = if (destination.emphasized) 34.dp else 24.dp
-            val inactive = if (onHome) Color.White.copy(alpha = 0.55f) else Color.Unspecified
 
             NavigationBarItem(
                 selected = selected,
@@ -64,8 +63,7 @@ fun BottomBar(
                         tint = when {
                             destination.emphasized -> PrimaryColor
                             selected -> Color.White
-                            onHome -> inactive
-                            else -> Color.Unspecified
+                            else -> inactive
                         },
                     )
                 },
@@ -74,26 +72,18 @@ fun BottomBar(
                         Text(
                             text = stringResource(it),
                             style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
-                            color = if (onHome) {
-                                if (selected) Color.White else inactive
-                            } else {
-                                Color.Unspecified
-                            },
+                            color = if (selected) Color.White else inactive,
                         )
                     }
                 },
                 colors = NavigationBarItemDefaults.colors(
                     indicatorColor = Color.Transparent,
                     selectedIconColor = Color.White,
-                    unselectedIconColor = if (onHome) inactive else Color.Gray,
+                    unselectedIconColor = inactive,
                     selectedTextColor = Color.White,
-                    unselectedTextColor = if (onHome) inactive else Color.Gray,
+                    unselectedTextColor = inactive,
                 ),
             )
         }
     }
 }
-
-@Composable
-private fun MaterialThemeSurface(): Color =
-    androidx.compose.material3.MaterialTheme.colorScheme.surface

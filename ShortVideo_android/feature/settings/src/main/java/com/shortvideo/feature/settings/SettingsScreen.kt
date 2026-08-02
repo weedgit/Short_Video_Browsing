@@ -75,6 +75,7 @@ fun SettingsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -210,7 +211,7 @@ fun SettingsScreen(
 
         Text(text = "Appearance", style = MaterialTheme.typography.titleMedium)
         Text(
-            text = "Choose Night or Light color mode.",
+            text = "Black background with light text. Night is pure black; Light uses slightly elevated surfaces.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

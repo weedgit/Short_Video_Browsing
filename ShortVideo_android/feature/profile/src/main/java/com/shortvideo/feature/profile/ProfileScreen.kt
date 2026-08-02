@@ -42,6 +42,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -54,6 +55,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.shortvideo.composable.feed.formatCount
+import com.shortvideo.composable.util.formatDuration
 import com.shortvideo.domain.model.ProfileVideoItem
 import com.shortvideo.domain.model.UserProfile
 import com.shortvideo.theme.PrimaryColor
@@ -443,6 +445,7 @@ private fun ProfileVideoCell(
     video: ProfileVideoItem,
     onClick: () -> Unit,
 ) {
+    val title = video.description.trim()
     Box(
         modifier = Modifier
             .aspectRatio(9f / 16f)
@@ -451,28 +454,61 @@ private fun ProfileVideoCell(
     ) {
         AsyncImage(
             model = video.thumbnailUrl ?: video.id,
-            contentDescription = null,
+            contentDescription = title.ifBlank { null },
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
         )
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = Icons.Default.PlayArrow,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(14.dp),
-            )
+        if (video.durationMs > 0L) {
             Text(
-                text = formatCount(video.likeCount),
+                text = formatDuration(video.durationMs),
                 color = Color.White,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(6.dp)
+                    .background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(4.dp))
+                    .padding(horizontal = 5.dp, vertical = 2.dp),
             )
+        }
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f)),
+                    ),
+                )
+                .padding(horizontal = 6.dp, vertical = 6.dp),
+        ) {
+            Column {
+                if (title.isNotEmpty()) {
+                    Text(
+                        text = title,
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(14.dp),
+                    )
+                    Text(
+                        text = formatCount(video.likeCount),
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+            }
         }
     }
 }

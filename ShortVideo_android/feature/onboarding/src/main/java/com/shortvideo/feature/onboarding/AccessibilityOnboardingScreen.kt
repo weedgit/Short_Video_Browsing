@@ -50,7 +50,7 @@ fun AccessibilityOnboardingScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    ShortVideoTheme(darkTheme = false) {
+    ShortVideoTheme(darkTheme = true) {
         Column(
             modifier = Modifier
                 .fillMaxSize()

@@ -73,6 +73,7 @@ fun DiscoverScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color.Black)
             .padding(horizontal = 16.dp)
             .padding(top = 16.dp),
     ) {

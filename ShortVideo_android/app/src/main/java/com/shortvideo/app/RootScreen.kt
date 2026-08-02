@@ -12,7 +12,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -24,7 +23,9 @@ import androidx.navigation.compose.rememberNavController
 import com.shortvideo.app.component.BottomBar
 import com.shortvideo.app.navigation.AppNavHost
 import com.shortvideo.core.DestinationRoute
+import com.shortvideo.theme.Black
 import com.shortvideo.theme.ShortVideoTheme
+import com.shortvideo.theme.White
 
 @Composable
 fun RootScreen(
@@ -52,7 +53,7 @@ fun RootScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(if (gate.isDarkTheme) Color.Black else Color.White),
+                    .background(Black),
             )
         }
         return
@@ -108,6 +109,8 @@ fun RootScreen(
 
     ShortVideoTheme(darkTheme = gate.isDarkTheme) {
         Scaffold(
+            containerColor = Black,
+            contentColor = White,
             bottomBar = {
                 if (showBottomBar) {
                     BottomBar(
